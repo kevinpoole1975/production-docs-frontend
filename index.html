@@ -344,16 +344,17 @@
       );
     };
 
-    // ==================== CREATE DOCUMENT FORM ====================
-    const CreateDocumentForm = ({ onSave, onCancel }) => {
+    // ==================== CREATE/EDIT DOCUMENT FORM ====================
+    const DocumentForm = ({ document, onSave, onCancel }) => {
       const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        category_id: 'audio',
-        document_type_id: 'procedure',
-        status: 'draft'
+        title: document?.title || '',
+        description: document?.description || '',
+        category_id: document?.category_id || 'audio',
+        document_type_id: document?.document_type_id || 'procedure',
+        status: document?.status || 'draft'
       });
       const [saving, setSaving] = useState(false);
+      const isEditing = !!document;
 
       const handleSubmit = async (e) => {
         e.preventDefault();
@@ -497,7 +498,7 @@
                     SAVING...
                   </>
                 ) : (
-                  'SAVE DOCUMENT'
+                  isEditing ? 'UPDATE DOCUMENT' : 'SAVE DOCUMENT'
                 )}
               </button>
               <button
@@ -527,6 +528,7 @@
       const [loading, setLoading] = useState(true);
       const [toast, setToast] = useState(null);
       const [showCreateDocModal, setShowCreateDocModal] = useState(false);
+      const [editingDocument, setEditingDocument] = useState(null);
 
       // Load initial data
       useEffect(() => {
@@ -596,6 +598,26 @@
         } catch (error) {
           console.error('Create document error:', error);
           showToast('Error creating document: ' + error.message, 'error');
+        }
+      };
+
+      const handleUpdateDocument = async (id, formData) => {
+        try {
+          console.log('Updating document:', id, formData);
+          const result = await apiRequest(`/documents/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(formData)
+          });
+          
+          console.log('Update document result:', result);
+          if (result.success) {
+            await loadData();
+            setEditingDocument(null);
+            showToast('Document updated successfully!');
+          }
+        } catch (error) {
+          console.error('Update document error:', error);
+          showToast('Error updating document: ' + error.message, 'error');
         }
       };
 
@@ -779,25 +801,43 @@
                       alignItems: 'center'
                     }}
                   >
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: '500' }}>{doc.title}</div>
                       <div style={{ 
                         fontSize: '0.85rem',
                         color: 'rgba(255,255,255,0.6)',
                         marginTop: '0.25rem'
                       }}>
-                        {doc.category} • {new Date(doc.created_at).toLocaleDateString()}
+                        {doc.category_id} • {new Date(doc.created_at).toLocaleDateString()}
                       </div>
                     </div>
-                    <div style={{
-                      padding: '0.25rem 0.75rem',
-                      background: doc.status === 'published' ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255, 234, 0, 0.2)',
-                      border: `1px solid ${doc.status === 'published' ? '#00ff88' : '#ffea00'}`,
-                      borderRadius: '0.25rem',
-                      fontSize: '0.85rem',
-                      color: doc.status === 'published' ? '#00ff88' : '#ffea00'
-                    }}>
-                      {doc.status}
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <div style={{
+                        padding: '0.25rem 0.75rem',
+                        background: doc.status === 'published' ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255, 234, 0, 0.2)',
+                        border: `1px solid ${doc.status === 'published' ? '#00ff88' : '#ffea00'}`,
+                        borderRadius: '0.25rem',
+                        fontSize: '0.75rem',
+                        color: doc.status === 'published' ? '#00ff88' : '#ffea00',
+                        textTransform: 'uppercase'
+                      }}>
+                        {doc.status}
+                      </div>
+                      <button
+                        onClick={() => setEditingDocument(doc)}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          background: 'rgba(0, 217, 255, 0.1)',
+                          border: '1px solid #00d9ff',
+                          borderRadius: '0.375rem',
+                          color: '#00d9ff',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          fontWeight: '500'
+                        }}
+                      >
+                        EDIT
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -926,9 +966,71 @@
                   </button>
                 </div>
                 <div style={{ padding: '1.5rem' }}>
-                  <CreateDocumentForm 
+                  <DocumentForm 
                     onSave={handleCreateDocument}
                     onCancel={() => setShowCreateDocModal(false)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Document Modal */}
+          {editingDocument && (
+            <div 
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.85)',
+                backdropFilter: 'blur(4px)',
+                zIndex: 50,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1rem'
+              }}
+              onClick={() => setEditingDocument(null)}
+            >
+              <div 
+                style={{
+                  background: '#1a1a1a',
+                  border: '2px solid #00d9ff',
+                  borderRadius: '0.5rem',
+                  maxWidth: '600px',
+                  width: '100%',
+                  maxHeight: '90vh',
+                  overflow: 'auto',
+                  boxShadow: '0 0 60px rgba(0, 217, 255, 0.4)'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{
+                  padding: '1.5rem',
+                  borderBottom: '1px solid rgba(0, 217, 255, 0.3)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <h2 style={{ color: '#00d9ff', fontSize: '1.25rem' }}>EDIT DOCUMENT</h2>
+                  <button
+                    onClick={() => setEditingDocument(null)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'white',
+                      fontSize: '1.5rem',
+                      cursor: 'pointer',
+                      padding: '0.25rem'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div style={{ padding: '1.5rem' }}>
+                  <DocumentForm 
+                    document={editingDocument}
+                    onSave={(formData) => handleUpdateDocument(editingDocument.id, formData)}
+                    onCancel={() => setEditingDocument(null)}
                   />
                 </div>
               </div>
