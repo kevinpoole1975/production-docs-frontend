@@ -349,11 +349,16 @@
       const [formData, setFormData] = useState({
         name: equipment?.name || '',
         category_id: equipment?.category_id || 'audio',
+        type: equipment?.type || '',
         manufacturer: equipment?.manufacturer || '',
         model: equipment?.model || '',
         serial_number: equipment?.serial_number || '',
         location: equipment?.location || '',
         status: equipment?.status || 'operational',
+        purchase_date: equipment?.purchase_date || null,
+        warranty_expires: equipment?.warranty_expires || null,
+        last_service_date: equipment?.last_service_date || null,
+        next_service_date: equipment?.next_service_date || null,
         notes: equipment?.notes || ''
       });
       const [saving, setSaving] = useState(false);
