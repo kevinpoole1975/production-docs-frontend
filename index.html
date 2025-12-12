@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production Tech Documentation Platform</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+      background: #0a0a0a;
+      color: white;
+      overflow-x: hidden;
+    }
+
+    .glow-cyan { box-shadow: 0 0 40px rgba(0, 217, 255, 0.3); }
+    .glow-green { box-shadow: 0 0 40px rgba(0, 255, 136, 0.3); }
+    .glow-yellow { box-shadow: 0 0 40px rgba(255, 234, 0, 0.3); }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    
+    .grid-bg {
+      background-image: 
+        linear-gradient(rgba(0, 217, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 217, 255, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    input, select, textarea {
+      background: #2a2a2a;
+      border: 1px solid rgba(0, 217, 255, 0.3);
+      color: white;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      font-family: monospace;
+      width: 100%;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #00d9ff;
+      box-shadow: 0 0 0 2px rgba(0, 217, 255, 0.1);
+    }
+
+    button {
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      font-family: monospace;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: #1a1a1a;
+      border: 2px solid #00d9ff;
+      border-radius: 0.5rem;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: auto;
+      box-shadow: 0 0 60px rgba(0, 217, 255, 0.4);
+    }
+
+    .toast {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: #1a1a1a;
+      border: 2px solid #00ff88;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+      z-index: 100;
+      animation: slideIn 0.3s ease-out;
+      max-width: 400px;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .spinner {
+      border: 3px solid rgba(0, 217, 255, 0.1);
+      border-top: 3px solid #00d9ff;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+
+    .status-operational { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
+    .status-maintenance { background: #ffea00; box-shadow: 0 0 10px #ffea00; }
+    .status-offline { background: #ff0055; box-shadow: 0 0 10px #ff0055; }
+
+    .scrollbar-custom::-webkit-scrollbar { width: 8px; height: 8px; }
+    .scrollbar-custom::-webkit-scrollbar-track { background: #1a1a1a; }
+    .scrollbar-custom::-webkit-scrollbar-thumb { background: #00d9ff; border-radius: 4px; }
+
+    @media (max-width: 768px) {
+      .hide-mobile { display: none; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { 
+      Settings, Radio, Monitor, Lightbulb, Network, Search, Plus, Edit2, 
+      Trash2, Download, Eye, Cable, Server, Database, Grid, Clock,
+      Save, X, ZoomIn, ZoomOut, HardDrive, Cpu, Layers, Wifi,
+      GitBranch, Upload, Filter, Tag, User, Calendar, Share2,
+      MessageSquare, Bell, Check, AlertCircle, FileText, Archive,
+      ChevronDown, ChevronRight, Copy, Link2, Mail, 
+      Lock, Users, Play, Menu, Home, File, Box, Activity
+    } = lucide;
+
+    // ==================== API CONFIGURATION ====================
+    const API_BASE_URL = 'https://production-docs-backend-production.up.railway.app/api';
+    
+    const getAuthToken = () => localStorage.getItem('auth_token');
+    const setAuthToken = (token) => localStorage.setItem('auth_token', token);
+    const removeAuthToken = () => localStorage.removeItem('auth_token');
+    
+    const apiRequest = async (endpoint, options = {}) => {
+      const token = getAuthToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          ...options,
+          headers,
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || `API request failed: ${response.status}`);
+        }
+        
+        return data;
+      } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+      }
+    };
+
+    // ==================== LOGIN COMPONENT ====================
+    const LoginPage = ({ onLoginSuccess }) => {
+      const [email, setEmail] = useState('admin@venue.com');
+      const [password, setPassword] = useState('admin123');
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const handleLogin = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try {
+          const data = await apiRequest('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+          });
+
+          if (data.success) {
+            setAuthToken(data.data.token);
+            onLoginSuccess(data.data.user);
+          }
+        } catch (err) {
+          setError(err.message || 'Login failed. Please check your credentials.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%)'
+        }} className="grid-bg">
+          <div className="fade-in" style={{
+            background: '#1a1a1a',
+            border: '2px solid #00d9ff',
+            borderRadius: '1rem',
+            padding: '3rem',
+            width: '100%',
+            maxWidth: '400px',
+            boxShadow: '0 0 60px rgba(0, 217, 255, 0.3)'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{ 
+                fontSize: '2rem', 
+                marginBottom: '0.5rem',
+                background: 'linear-gradient(135deg, #00d9ff 0%, #00ff88 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontWeight: 'bold'
+              }}>
+                PROD DOCS
+              </div>
+              <div style={{ 
+                fontSize: '0.75rem', 
+                color: 'rgba(255,255,255,0.5)',
+                letterSpacing: '3px'
+              }}>
+                TECHNICAL DOCUMENTATION
+              </div>
+            </div>
+
+            <form onSubmit={handleLogin}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem',
+                  color: '#00d9ff',
+                  fontSize: '0.85rem'
+                }}>
+                  EMAIL
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  style={{ padding: '0.75rem' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem',
+                  color: '#00d9ff',
+                  fontSize: '0.85rem'
+                }}>
+                  PASSWORD
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  style={{ padding: '0.75rem' }}
+                />
+              </div>
+
+              {error && (
+                <div style={{
+                  background: 'rgba(255, 0, 85, 0.1)',
+                  border: '1px solid #ff0055',
+                  borderRadius: '0.375rem',
+                  padding: '0.75rem',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.85rem',
+                  color: '#ff0055'
+                }}>
+                  <AlertCircle size={16} />
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: 'linear-gradient(135deg, #00d9ff 0%, #00ff88 100%)',
+                  borderRadius: '0.5rem',
+                  color: '#0a0a0a',
+                  fontWeight: 'bold',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner" style={{ width: '16px', height: '16px' }} />
+                    AUTHENTICATING...
+                  </>
+                ) : (
+                  <>
+                    <Lock size={16} />
+                    LOGIN
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    };
+
+    // ==================== TOAST NOTIFICATION ====================
+    const Toast = ({ message, type = 'success', onClose }) => {
+      useEffect(() => {
+        const timer = setTimeout(onClose, 3000);
+        return () => clearTimeout(timer);
+      }, []);
+
+      return (
+        <div className="toast" style={{
+          borderColor: type === 'success' ? '#00ff88' : type === 'error' ? '#ff0055' : '#ffea00'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {type === 'success' && <Check size={20} color="#00ff88" />}
+            {type === 'error' && <AlertCircle size={20} color="#ff0055" />}
+            {type === 'info' && <Bell size={20} color="#ffea00" />}
+            <span style={{ fontSize: '0.9rem' }}>{message}</span>
+          </div>
+        </div>
+      );
+    };
+
+    // ==================== MODAL COMPONENT ====================
+    const Modal = ({ children, onClose, title }) => {
+      return (
+        <div className="modal" onClick={onClose}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{
+              padding: '1.5rem',
+              borderBottom: '1px solid rgba(0, 217, 255, 0.3)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h2 style={{ color: '#00d9ff', fontSize: '1.25rem' }}>{title}</h2>
+              <button
+                onClick={onClose}
+                style={{
+                  background: 'transparent',
+                  padding: '0.5rem',
+                  color: 'white',
+                  display: 'flex'
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: '1.5rem' }}>
+              {children}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ==================== DOCUMENT FORM ====================
+    const DocumentForm = ({ document, onSave, onCancel }) => {
+      const [formData, setFormData] = useState({
+        title: document?.title || '',
+        category: document?.category || 'audio',
+        document_type: document?.document_type || 'procedure',
+        content: document?.content || '',
+        status: document?.status || 'draft',
+        tags: document?.tags?.join(', ') || ''
+      });
+      const [saving, setSaving] = useState(false);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        
+        const data = {
+          ...formData,
+          tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean)
+        };
+
+        await onSave(data);
+        setSaving(false);
+      };
+
+      return (
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00d9ff', fontSize: '0.85rem' }}>
+                TITLE
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00d9ff', fontSize: '0.85rem' }}>
+                  CATEGORY
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                >
+                  <option value="audio">Audio</option>
+                  <option value="video">Video</option>
+                  <option value="lighting">Lighting</option>
+                  <option value="network">Network</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00d9ff', fontSize: '0.85rem' }}>
+                  TYPE
+                </label>
+                <select
+                  value={formData.document_type}
+                  onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+                >
+                  <option value="procedure">Procedure</option>
+                  <option value="signal-flow">Signal Flow</option>
+                  <option value="topology">Topology</option>
+                  <option value="patching">Patching</option>
+                  <option value="troubleshooting">Troubleshooting</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00d9ff', fontSize: '0.85rem' }}>
+                CONTENT
+              </label>
+              <textarea
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                rows="10"
+                style={{ resize: 'vertical' }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00d9ff', fontSize: '0.85rem' }}>
+                  STATUS
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00d9ff', fontSize: '0.85rem' }}>
+                  TAGS (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={formData.tags}
+                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                  placeholder="setup, foh, wireless"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <button
+                type="submit"
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  background: 'linear-gradient(135deg, #00d9ff 0%, #00ff88 100%)',
+                  borderRadius: '0.375rem',
+                  color: '#0a0a0a',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                {saving ? (
+                  <>
+                    <span className="spinner" style={{ width: '16px', height: '16px', borderTopColor: '#0a0a0a' }} />
+                    SAVING...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    SAVE DOCUMENT
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '0.375rem',
+                  color: 'white'
+                }}
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </form>
+      );
+    };
+
+    // ==================== EQUIPMENT FORM ====================
+    const EquipmentForm = ({ equipment, onSave, onCancel }) => {
+      const [formData, setFormData] = useState({
+        name: equipment?.name || '',
+        category: equipment?.category || 'audio',
+        manufacturer: equipment?.manufacturer || '',
+        model: equipment?.model || '',
+        serial_number: equipment?.serial_number || '',
+        location: equipment?.location || '',
+        status: equipment?.status || 'operational',
+        purchase_date: equipment?.purchase_date || '',
+        last_service: equipment?.last_service || '',
+        next_service: equipment?.next_service || '',
+        notes: equipment?.notes || ''
+      });
+      const [saving, setSaving] = useState(false);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        await onSave(formData);
+        setSaving(false);
+      };
+
+      return (
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00ff88', fontSize: '0.85rem' }}>
+                  EQUIPMENT NAME
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00ff88', fontSize: '0.85rem' }}>
+                  CATEGORY
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                >
+                  <option value="audio">Audio</option>
+                  <option value="video">Video</option>
+                  <option value="lighting">Lighting</option>
+                  <option value="network">Network</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00ff88', fontSize: '0.85rem' }}>
+                  MANUFACTURER
+                </label>
+                <input
+                  type="text"
+                  value={formData.manufacturer}
+                  onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00ff88', fontSize: '0.85rem' }}>
+                  MODEL
+                </label>
+                <input
+                  type="text"
+                  value={formData.model}
+                  onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00ff88', fontSize: '0.85rem' }}>
+                  SERIAL NUMBER
+                </label>
+                <input
+                  type="text"
+                  value={formData.serial_number}
+                  onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00ff88', fontSize: '0.85rem' }}>
+                  LOCATION
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="FOH, Stage Left, Rack 3"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00ff88', fontSize: '0.85rem' }}>
+                  STATUS
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <option value="operational">Operational</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="offline">Offline</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00ff88', fontSize: '0.85rem' }}>
+                  LAST SERVICE
+                </label>
+                <input
+                  type="date"
+                  value={formData.last_service}
+                  onChange={(e) => setFormData({ ...formData, last_service: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00ff88', fontSize: '0.85rem' }}>
+                  NEXT SERVICE
+                </label>
+                <input
+                  type="date"
+                  value={formData.next_service}
+                  onChange={(e) => setFormData({ ...formData, next_service: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00ff88', fontSize: '0.85rem' }}>
+                NOTES
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows="4"
+                style={{ resize: 'vertical' }}
+                placeholder="Additional information, specifications, etc."
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <button
+                type="submit"
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  background: 'linear-gradient(135deg, #00ff88 0%, #00d9ff 100%)',
+                  borderRadius: '0.375rem',
+                  color: '#0a0a0a',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                {saving ? (
+                  <>
+                    <span className="spinner" style={{ width: '16px', height: '16px', borderTopColor: '#0a0a0a' }} />
+                    SAVING...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} />
+                    SAVE EQUIPMENT
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '0.375rem',
+                  color: 'white'
+                }}
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </form>
+      );
+    };
+
+    // ==================== MAIN APP COMPONENT ====================
+    const MainApp = ({ user, onLogout }) => {
+      const [activeSection, setActiveSection] = useState('dashboard');
+      const [documents, setDocuments] = useState([]);
+      const [equipment, setEquipment] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [toast, setToast] = useState(null);
+      const [modal, setModal] = useState(null);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [categoryFilter, setCategoryFilter] = useState('all');
+
+      useEffect(() => {
+        loadData();
+      }, []);
+
+      const loadData = async () => {
+        try {
+          setLoading(true);
+          
+          const [docsData, equipData] = await Promise.all([
+            apiRequest('/documents'),
+            apiRequest('/equipment')
+          ]);
+          
+          if (docsData.success && docsData.data) {
+            setDocuments(Array.isArray(docsData.data) ? docsData.data : []);
+          }
+          
+          if (equipData.success && equipData.data) {
+            setEquipment(Array.isArray(equipData.data) ? equipData.data : []);
+          }
+          
+        } catch (error) {
+          showToast('Error loading data: ' + error.message, 'error');
+          setDocuments([]);
+          setEquipment([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+      };
+
+      // Document CRUD
+      const handleCreateDocument = async (data) => {
+        try {
+          const result = await apiRequest('/documents', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+          
+          if (result.success) {
+            await loadData();
+            setModal(null);
+            showToast('Document created successfully!');
+          }
+        } catch (error) {
+          showToast('Error creating document: ' + error.message, 'error');
+        }
+      };
+
+      const handleUpdateDocument = async (id, data) => {
+        try {
+          const result = await apiRequest(`/documents/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+          });
+          
+          if (result.success) {
+            await loadData();
+            setModal(null);
+            showToast('Document updated successfully!');
+          }
+        } catch (error) {
+          showToast('Error updating document: ' + error.message, 'error');
+        }
+      };
+
+      const handleDeleteDocument = async (id) => {
+        if (!confirm('Are you sure you want to delete this document?')) return;
+        
+        try {
+          const result = await apiRequest(`/documents/${id}`, {
+            method: 'DELETE'
+          });
+          
+          if (result.success) {
+            await loadData();
+            showToast('Document deleted successfully!');
+          }
+        } catch (error) {
+          showToast('Error deleting document: ' + error.message, 'error');
+        }
+      };
+
+      // Equipment CRUD
+      const handleCreateEquipment = async (data) => {
+        try {
+          const result = await apiRequest('/equipment', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+          
+          if (result.success) {
+            await loadData();
+            setModal(null);
+            showToast('Equipment added successfully!');
+          }
+        } catch (error) {
+          showToast('Error adding equipment: ' + error.message, 'error');
+        }
+      };
+
+      const handleUpdateEquipment = async (id, data) => {
+        try {
+          const result = await apiRequest(`/equipment/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+          });
+          
+          if (result.success) {
+            await loadData();
+            setModal(null);
+            showToast('Equipment updated successfully!');
+          }
+        } catch (error) {
+          showToast('Error updating equipment: ' + error.message, 'error');
+        }
+      };
+
+      const handleDeleteEquipment = async (id) => {
+        if (!confirm('Are you sure you want to delete this equipment?')) return;
+        
+        try {
+          const result = await apiRequest(`/equipment/${id}`, {
+            method: 'DELETE'
+          });
+          
+          if (result.success) {
+            await loadData();
+            showToast('Equipment deleted successfully!');
+          }
+        } catch (error) {
+          showToast('Error deleting equipment: ' + error.message, 'error');
+        }
+      };
+
+      // Filtering
+      const filteredDocuments = documents.filter(doc => {
+        const matchesSearch = doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            doc.content?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = categoryFilter === 'all' || doc.category === categoryFilter;
+        return matchesSearch && matchesCategory;
+      });
+
+      const filteredEquipment = equipment.filter(eq => {
+        const matchesSearch = eq.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            eq.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = categoryFilter === 'all' || eq.category === categoryFilter;
+        return matchesSearch && matchesCategory;
+      });
+
+      if (loading) {
+        return (
+          <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <div className="spinner" style={{ width: '48px', height: '48px' }} />
+            <div style={{ color: '#00d9ff' }}>LOADING PLATFORM...</div>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ display: 'flex', minHeight: '100vh' }} className="grid-bg">
+          {/* Sidebar */}
+          <div style={{
+            width: '250px',
+            background: '#1a1a1a',
+            borderRight: '2px solid rgba(0, 217, 255, 0.3)',
+            padding: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <div style={{
+              marginBottom: '2rem',
+              paddingBottom: '1rem',
+              borderBottom: '1px solid rgba(0, 217, 255, 0.3)'
+            }}>
+              <div style={{
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #00d9ff 0%, #00ff88 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                marginBottom: '0.25rem'
+              }}>
+                PROD DOCS
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '2px' }}>
+                {user.email}
+              </div>
+            </div>
+
+            {[
+              { id: 'dashboard', label: 'Dashboard', icon: Home },
+              { id: 'documents', label: 'Documents', icon: FileText },
+              { id: 'equipment', label: 'Equipment', icon: Box },
+            ].map(section => {
+              const Icon = section.icon;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    background: activeSection === section.id ? 'rgba(0, 217, 255, 0.1)' : 'transparent',
+                    border: activeSection === section.id ? '1px solid #00d9ff' : '1px solid transparent',
+                    borderRadius: '0.375rem',
+                    color: activeSection === section.id ? '#00d9ff' : 'white',
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  <Icon size={18} />
+                  {section.label}
+                </button>
+              );
+            })}
+
+            <div style={{ flex: 1 }} />
+
+            <button
+              onClick={onLogout}
+              style={{
+                padding: '0.75rem',
+                background: 'rgba(255, 0, 85, 0.1)',
+                border: '1px solid #ff0055',
+                borderRadius: '0.375rem',
+                color: '#ff0055',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                fontSize: '0.85rem'
+              }}
+            >
+              <Lock size={16} />
+              LOGOUT
+            </button>
+          </div>
+
+          {/* Main Content */}
+          <div style={{ flex: 1, overflow: 'auto' }} className="scrollbar-custom">
+            <div style={{ padding: '2rem' }}>
+              {/* Dashboard */}
+              {activeSection === 'dashboard' && (
+                <div>
+                  <h1 style={{ 
+                    fontSize: '2rem', 
+                    marginBottom: '2rem',
+                    color: '#00d9ff'
+                  }}>
+                    DASHBOARD
+                  </h1>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                    gap: '1rem',
+                    marginBottom: '2rem'
+                  }}>
+                    <div style={{
+                      background: '#1a1a1a',
+                      border: '2px solid #00d9ff',
+                      borderRadius: '0.5rem',
+                      padding: '1.5rem'
+                    }}>
+                      <div style={{ fontSize: '2.5rem', color: '#00d9ff', fontWeight: 'bold' }}>
+                        {documents.length}
+                      </div>
+                      <div style={{ color: 'rgba(255,255,255,0.6)', marginTop: '0.5rem' }}>
+                        Total Documents
+                      </div>
+                    </div>
+
+                    <div style={{
+                      background: '#1a1a1a',
+                      border: '2px solid #00ff88',
+                      borderRadius: '0.5rem',
+                      padding: '1.5rem'
+                    }}>
+                      <div style={{ fontSize: '2.5rem', color: '#00ff88', fontWeight: 'bold' }}>
+                        {equipment.length}
+                      </div>
+                      <div style={{ color: 'rgba(255,255,255,0.6)', marginTop: '0.5rem' }}>
+                        Equipment Items
+                      </div>
+                    </div>
+
+                    <div style={{
+                      background: '#1a1a1a',
+                      border: '2px solid #ffea00',
+                      borderRadius: '0.5rem',
+                      padding: '1.5rem'
+                    }}>
+                      <div style={{ fontSize: '2.5rem', color: '#ffea00', fontWeight: 'bold' }}>
+                        {equipment.filter(e => e.status === 'operational').length}
+                      </div>
+                      <div style={{ color: 'rgba(255,255,255,0.6)', marginTop: '0.5rem' }}>
+                        Operational
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recent Activity */}
+                  <div style={{
+                    background: '#1a1a1a',
+                    border: '2px solid rgba(0, 217, 255, 0.3)',
+                    borderRadius: '0.5rem',
+                    padding: '1.5rem'
+                  }}>
+                    <h2 style={{ color: '#00d9ff', marginBottom: '1rem', fontSize: '1.25rem' }}>
+                      RECENT DOCUMENTS
+                    </h2>
+                    {documents.length === 0 ? (
+                      <div style={{ 
+                        textAlign: 'center', 
+                        padding: '3rem',
+                        color: 'rgba(255,255,255,0.5)'
+                      }}>
+                        <FileText size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+                        <div>No documents yet</div>
+                        <button
+                          onClick={() => setModal('createDocument')}
+                          style={{
+                            marginTop: '1rem',
+                            padding: '0.5rem 1rem',
+                            background: 'linear-gradient(135deg, #00d9ff 0%, #00ff88 100%)',
+                            borderRadius: '0.375rem',
+                            color: '#0a0a0a',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          CREATE FIRST DOCUMENT
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {documents.slice(0, 5).map(doc => (
+                          <div
+                            key={doc.id}
+                            style={{
+                              padding: '1rem',
+                              background: '#2a2a2a',
+                              border: '1px solid rgba(0, 217, 255, 0.2)',
+                              borderRadius: '0.375rem',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: '500', color: '#00d9ff' }}>{doc.title}</div>
+                              <div style={{ 
+                                fontSize: '0.8rem',
+                                color: 'rgba(255,255,255,0.5)',
+                                marginTop: '0.25rem'
+                              }}>
+                                {doc.category} • {new Date(doc.created_at).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <div style={{
+                              padding: '0.25rem 0.75rem',
+                              background: doc.status === 'published' ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255, 234, 0, 0.2)',
+                              border: `1px solid ${doc.status === 'published' ? '#00ff88' : '#ffea00'}`,
+                              borderRadius: '0.25rem',
+                              fontSize: '0.75rem',
+                              color: doc.status === 'published' ? '#00ff88' : '#ffea00',
+                              textTransform: 'uppercase'
+                            }}>
+                              {doc.status}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Documents Section */}
+              {activeSection === 'documents' && (
+                <div>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '2rem'
+                  }}>
+                    <h1 style={{ fontSize: '2rem', color: '#00d9ff' }}>DOCUMENTS</h1>
+                    <button
+                      onClick={() => setModal('createDocument')}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        background: 'linear-gradient(135deg, #00d9ff 0%, #00ff88 100%)',
+                        borderRadius: '0.375rem',
+                        color: '#0a0a0a',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      <Plus size={18} />
+                      NEW DOCUMENT
+                    </button>
+                  </div>
+
+                  {/* Filters */}
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '1rem', 
+                    marginBottom: '1.5rem',
+                    flexWrap: 'wrap'
+                  }}>
+                    <input
+                      type="text"
+                      placeholder="Search documents..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      style={{ 
+                        flex: 1, 
+                        minWidth: '200px',
+                        padding: '0.75rem',
+                        background: '#2a2a2a',
+                        border: '1px solid rgba(0, 217, 255, 0.3)',
+                        borderRadius: '0.375rem'
+                      }}
+                    />
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        background: '#2a2a2a',
+                        border: '1px solid rgba(0, 217, 255, 0.3)',
+                        borderRadius: '0.375rem'
+                      }}
+                    >
+                      <option value="all">All Categories</option>
+                      <option value="audio">Audio</option>
+                      <option value="video">Video</option>
+                      <option value="lighting">Lighting</option>
+                      <option value="network">Network</option>
+                    </select>
+                  </div>
+
+                  {/* Documents Grid */}
+                  {filteredDocuments.length === 0 ? (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '4rem',
+                      background: '#1a1a1a',
+                      border: '2px dashed rgba(0, 217, 255, 0.3)',
+                      borderRadius: '0.5rem',
+                      color: 'rgba(255,255,255,0.5)'
+                    }}>
+                      <FileText size={64} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+                      <div style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
+                        No documents found
+                      </div>
+                      <div>
+                        {documents.length === 0 ? 'Create your first document to get started' : 'Try adjusting your filters'}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                      gap: '1rem'
+                    }}>
+                      {filteredDocuments.map(doc => (
+                        <div
+                          key={doc.id}
+                          style={{
+                            background: '#1a1a1a',
+                            border: '2px solid rgba(0, 217, 255, 0.3)',
+                            borderRadius: '0.5rem',
+                            padding: '1.5rem',
+                            transition: 'all 0.2s ease'
+                          }}
+                          className="glow-item"
+                        >
+                          <div style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between',
+                            alignItems: 'start',
+                            marginBottom: '1rem'
+                          }}>
+                            <div style={{
+                              padding: '0.25rem 0.75rem',
+                              background: 'rgba(0, 217, 255, 0.1)',
+                              border: '1px solid #00d9ff',
+                              borderRadius: '0.25rem',
+                              fontSize: '0.7rem',
+                              color: '#00d9ff',
+                              textTransform: 'uppercase'
+                            }}>
+                              {doc.category}
+                            </div>
+                            <div style={{
+                              padding: '0.25rem 0.75rem',
+                              background: doc.status === 'published' ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 234, 0, 0.1)',
+                              border: `1px solid ${doc.status === 'published' ? '#00ff88' : '#ffea00'}`,
+                              borderRadius: '0.25rem',
+                              fontSize: '0.7rem',
+                              color: doc.status === 'published' ? '#00ff88' : '#ffea00',
+                              textTransform: 'uppercase'
+                            }}>
+                              {doc.status}
+                            </div>
+                          </div>
+
+                          <h3 style={{ 
+                            color: 'white', 
+                            marginBottom: '0.5rem',
+                            fontSize: '1.1rem'
+                          }}>
+                            {doc.title}
+                          </h3>
+
+                          <p style={{ 
+                            color: 'rgba(255,255,255,0.6)', 
+                            fontSize: '0.85rem',
+                            marginBottom: '1rem',
+                            lineHeight: '1.5'
+                          }}>
+                            {doc.content?.substring(0, 100)}...
+                          </p>
+
+                          <div style={{ 
+                            fontSize: '0.75rem',
+                            color: 'rgba(255,255,255,0.4)',
+                            marginBottom: '1rem'
+                          }}>
+                            {new Date(doc.created_at).toLocaleDateString()}
+                          </div>
+
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '0.5rem',
+                            borderTop: '1px solid rgba(255,255,255,0.1)',
+                            paddingTop: '1rem'
+                          }}>
+                            <button
+                              onClick={() => setModal({ type: 'editDocument', data: doc })}
+                              style={{
+                                flex: 1,
+                                padding: '0.5rem',
+                                background: 'rgba(0, 217, 255, 0.1)',
+                                border: '1px solid #00d9ff',
+                                borderRadius: '0.375rem',
+                                color: '#00d9ff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              <Edit2 size={14} />
+                              EDIT
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDocument(doc.id)}
+                              style={{
+                                padding: '0.5rem 0.75rem',
+                                background: 'rgba(255, 0, 85, 0.1)',
+                                border: '1px solid #ff0055',
+                                borderRadius: '0.375rem',
+                                color: '#ff0055',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Equipment Section */}
+              {activeSection === 'equipment' && (
+                <div>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '2rem'
+                  }}>
+                    <h1 style={{ fontSize: '2rem', color: '#00ff88' }}>EQUIPMENT</h1>
+                    <button
+                      onClick={() => setModal('createEquipment')}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        background: 'linear-gradient(135deg, #00ff88 0%, #00d9ff 100%)',
+                        borderRadius: '0.375rem',
+                        color: '#0a0a0a',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}
+                    >
+                      <Plus size={18} />
+                      ADD EQUIPMENT
+                    </button>
+                  </div>
+
+                  {/* Filters */}
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '1rem', 
+                    marginBottom: '1.5rem',
+                    flexWrap: 'wrap'
+                  }}>
+                    <input
+                      type="text"
+                      placeholder="Search equipment..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      style={{ 
+                        flex: 1, 
+                        minWidth: '200px',
+                        padding: '0.75rem',
+                        background: '#2a2a2a',
+                        border: '1px solid rgba(0, 255, 136, 0.3)',
+                        borderRadius: '0.375rem'
+                      }}
+                    />
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        background: '#2a2a2a',
+                        border: '1px solid rgba(0, 255, 136, 0.3)',
+                        borderRadius: '0.375rem'
+                      }}
+                    >
+                      <option value="all">All Categories</option>
+                      <option value="audio">Audio</option>
+                      <option value="video">Video</option>
+                      <option value="lighting">Lighting</option>
+                      <option value="network">Network</option>
+                    </select>
+                  </div>
+
+                  {/* Equipment List */}
+                  {filteredEquipment.length === 0 ? (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '4rem',
+                      background: '#1a1a1a',
+                      border: '2px dashed rgba(0, 255, 136, 0.3)',
+                      borderRadius: '0.5rem',
+                      color: 'rgba(255,255,255,0.5)'
+                    }}>
+                      <Box size={64} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+                      <div style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
+                        No equipment found
+                      </div>
+                      <div>
+                        {equipment.length === 0 ? 'Add your first equipment item' : 'Try adjusting your filters'}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {filteredEquipment.map(eq => (
+                        <div
+                          key={eq.id}
+                          style={{
+                            background: '#1a1a1a',
+                            border: '2px solid rgba(0, 255, 136, 0.3)',
+                            borderRadius: '0.5rem',
+                            padding: '1.5rem',
+                            transition: 'all 0.2s ease'
+                          }}
+                          className="glow-item"
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                                <h3 style={{ color: 'white', fontSize: '1.25rem' }}>
+                                  {eq.name}
+                                </h3>
+                                <div style={{
+                                  padding: '0.25rem 0.75rem',
+                                  background: 'rgba(0, 255, 136, 0.1)',
+                                  border: '1px solid #00ff88',
+                                  borderRadius: '0.25rem',
+                                  fontSize: '0.7rem',
+                                  color: '#00ff88',
+                                  textTransform: 'uppercase'
+                                }}>
+                                  {eq.category}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                  <span className={`status-dot status-${eq.status}`} />
+                                  <span style={{
+                                    fontSize: '0.8rem',
+                                    color: 
+                                      eq.status === 'operational' ? '#00ff88' :
+                                      eq.status === 'maintenance' ? '#ffea00' :
+                                      '#ff0055',
+                                    textTransform: 'uppercase'
+                                  }}>
+                                    {eq.status}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                                gap: '1rem',
+                                marginTop: '1rem',
+                                color: 'rgba(255,255,255,0.6)',
+                                fontSize: '0.85rem'
+                              }}>
+                                {eq.manufacturer && (
+                                  <div>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>Manufacturer: </span>
+                                    {eq.manufacturer}
+                                  </div>
+                                )}
+                                {eq.model && (
+                                  <div>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>Model: </span>
+                                    {eq.model}
+                                  </div>
+                                )}
+                                {eq.location && (
+                                  <div>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>Location: </span>
+                                    {eq.location}
+                                  </div>
+                                )}
+                                {eq.serial_number && (
+                                  <div>
+                                    <span style={{ color: 'rgba(255,255,255,0.4)' }}>S/N: </span>
+                                    {eq.serial_number}
+                                  </div>
+                                )}
+                              </div>
+
+                              {(eq.last_service || eq.next_service) && (
+                                <div style={{
+                                  marginTop: '1rem',
+                                  padding: '0.75rem',
+                                  background: 'rgba(255, 234, 0, 0.05)',
+                                  border: '1px solid rgba(255, 234, 0, 0.2)',
+                                  borderRadius: '0.375rem',
+                                  fontSize: '0.8rem',
+                                  color: 'rgba(255,255,255,0.6)'
+                                }}>
+                                  {eq.last_service && (
+                                    <span>Last Service: {new Date(eq.last_service).toLocaleDateString()}</span>
+                                  )}
+                                  {eq.last_service && eq.next_service && <span> • </span>}
+                                  {eq.next_service && (
+                                    <span>Next Service: {new Date(eq.next_service).toLocaleDateString()}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+                              <button
+                                onClick={() => setModal({ type: 'editEquipment', data: eq })}
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  background: 'rgba(0, 255, 136, 0.1)',
+                                  border: '1px solid #00ff88',
+                                  borderRadius: '0.375rem',
+                                  color: '#00ff88',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  fontSize: '0.8rem'
+                                }}
+                              >
+                                <Edit2 size={14} />
+                                EDIT
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEquipment(eq.id)}
+                                style={{
+                                  padding: '0.5rem 0.75rem',
+                                  background: 'rgba(255, 0, 85, 0.1)',
+                                  border: '1px solid #ff0055',
+                                  borderRadius: '0.375rem',
+                                  color: '#ff0055',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Modals */}
+          {modal === 'createDocument' && (
+            <Modal title="CREATE NEW DOCUMENT" onClose={() => setModal(null)}>
+              <DocumentForm
+                onSave={handleCreateDocument}
+                onCancel={() => setModal(null)}
+              />
+            </Modal>
+          )}
+
+          {modal?.type === 'editDocument' && (
+            <Modal title="EDIT DOCUMENT" onClose={() => setModal(null)}>
+              <DocumentForm
+                document={modal.data}
+                onSave={(data) => handleUpdateDocument(modal.data.id, data)}
+                onCancel={() => setModal(null)}
+              />
+            </Modal>
+          )}
+
+          {modal === 'createEquipment' && (
+            <Modal title="ADD NEW EQUIPMENT" onClose={() => setModal(null)}>
+              <EquipmentForm
+                onSave={handleCreateEquipment}
+                onCancel={() => setModal(null)}
+              />
+            </Modal>
+          )}
+
+          {modal?.type === 'editEquipment' && (
+            <Modal title="EDIT EQUIPMENT" onClose={() => setModal(null)}>
+              <EquipmentForm
+                equipment={modal.data}
+                onSave={(data) => handleUpdateEquipment(modal.data.id, data)}
+                onCancel={() => setModal(null)}
+              />
+            </Modal>
+          )}
+
+          {/* Toast */}
+          {toast && (
+            <Toast
+              message={toast.message}
+              type={toast.type}
+              onClose={() => setToast(null)}
+            />
+          )}
+        </div>
+      );
+    };
+
+    // ==================== APP ROOT ====================
+    const App = () => {
+      const [isAuthenticated, setIsAuthenticated] = useState(false);
+      const [currentUser, setCurrentUser] = useState(null);
+      const [checking, setChecking] = useState(true);
+
+      useEffect(() => {
+        const checkAuth = async () => {
+          const token = getAuthToken();
+          if (token) {
+            try {
+              const data = await apiRequest('/auth/me');
+              if (data.success) {
+                setCurrentUser(data.data);
+                setIsAuthenticated(true);
+              } else {
+                removeAuthToken();
+              }
+            } catch (error) {
+              removeAuthToken();
+            }
+          }
+          setChecking(false);
+        };
+        
+        checkAuth();
+      }, []);
+
+      const handleLoginSuccess = (user) => {
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+      };
+
+      const handleLogout = () => {
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+      };
+
+      if (checking) {
+        return (
+          <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <div className="spinner" style={{ width: '48px', height: '48px' }} />
+          </div>
+        );
+      }
+
+      return isAuthenticated ? (
+        <MainApp user={currentUser} onLogout={handleLogout} />
+      ) : (
+        <LoginPage onLoginSuccess={handleLoginSuccess} />
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
