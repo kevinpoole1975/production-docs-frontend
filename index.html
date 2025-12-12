@@ -344,6 +344,243 @@
       );
     };
 
+    // ==================== EQUIPMENT FORM ====================
+    const EquipmentForm = ({ equipment, onSave, onCancel }) => {
+      const [formData, setFormData] = useState({
+        name: equipment?.name || '',
+        category_id: equipment?.category_id || 'audio',
+        manufacturer: equipment?.manufacturer || '',
+        model: equipment?.model || '',
+        serial_number: equipment?.serial_number || '',
+        location: equipment?.location || '',
+        status: equipment?.status || 'operational',
+        notes: equipment?.notes || ''
+      });
+      const [saving, setSaving] = useState(false);
+      const isEditing = !!equipment;
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        await onSave(formData);
+        setSaving(false);
+      };
+
+      return (
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                color: '#00ff88', 
+                fontSize: '0.85rem',
+                fontWeight: '500'
+              }}>
+                EQUIPMENT NAME *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                style={{ width: '100%' }}
+                placeholder="Enter equipment name"
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: '#00ff88', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
+                  CATEGORY
+                </label>
+                <select
+                  value={formData.category_id}
+                  onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                  style={{ width: '100%' }}
+                >
+                  <option value="audio">Audio</option>
+                  <option value="video">Video</option>
+                  <option value="lighting">Lighting</option>
+                  <option value="network">Network</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: '#00ff88', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
+                  STATUS
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  style={{ width: '100%' }}
+                >
+                  <option value="operational">Operational</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="offline">Offline</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: '#00ff88', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
+                  MANUFACTURER
+                </label>
+                <input
+                  type="text"
+                  value={formData.manufacturer}
+                  onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                  style={{ width: '100%' }}
+                  placeholder="e.g., Shure, Allen & Heath"
+                />
+              </div>
+
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: '#00ff88', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
+                  MODEL
+                </label>
+                <input
+                  type="text"
+                  value={formData.model}
+                  onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                  style={{ width: '100%' }}
+                  placeholder="e.g., SM58, dLive C3500"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: '#00ff88', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
+                  SERIAL NUMBER
+                </label>
+                <input
+                  type="text"
+                  value={formData.serial_number}
+                  onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
+                  style={{ width: '100%' }}
+                  placeholder="Optional"
+                />
+              </div>
+
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: '#00ff88', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
+                  LOCATION
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  style={{ width: '100%' }}
+                  placeholder="e.g., FOH, Stage Left, Rack 3"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                color: '#00ff88', 
+                fontSize: '0.85rem',
+                fontWeight: '500'
+              }}>
+                NOTES
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows="4"
+                style={{ width: '100%', resize: 'vertical' }}
+                placeholder="Additional information, specifications, etc."
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <button
+                type="submit"
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  background: saving ? '#666' : 'linear-gradient(135deg, #00ff88 0%, #00d9ff 100%)',
+                  borderRadius: '0.375rem',
+                  border: 'none',
+                  color: '#0a0a0a',
+                  fontWeight: 'bold',
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                {saving ? (
+                  <>
+                    <span className="spinner" style={{ width: '16px', height: '16px', borderTopColor: '#0a0a0a' }} />
+                    SAVING...
+                  </>
+                ) : (
+                  isEditing ? 'UPDATE EQUIPMENT' : 'SAVE EQUIPMENT'
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '0.375rem',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </form>
+      );
+    };
+
     // ==================== CREATE/EDIT DOCUMENT FORM ====================
     const DocumentForm = ({ document, onSave, onCancel }) => {
       const [formData, setFormData] = useState({
@@ -530,6 +767,9 @@
       const [showCreateDocModal, setShowCreateDocModal] = useState(false);
       const [editingDocument, setEditingDocument] = useState(null);
       const [viewingDocument, setViewingDocument] = useState(null);
+      const [showCreateEquipModal, setShowCreateEquipModal] = useState(false);
+      const [editingEquipment, setEditingEquipment] = useState(null);
+      const [viewingEquipment, setViewingEquipment] = useState(null);
 
       // Load initial data
       useEffect(() => {
@@ -641,6 +881,69 @@
         } catch (error) {
           console.error('Delete document error:', error);
           showToast('Error deleting document: ' + error.message, 'error');
+        }
+      };
+
+      // Equipment handlers
+      const handleCreateEquipment = async (formData) => {
+        try {
+          console.log('Creating equipment:', formData);
+          const result = await apiRequest('/equipment', {
+            method: 'POST',
+            body: JSON.stringify(formData)
+          });
+          
+          console.log('Create equipment result:', result);
+          if (result.success) {
+            await loadData();
+            setShowCreateEquipModal(false);
+            showToast('Equipment added successfully!');
+          }
+        } catch (error) {
+          console.error('Create equipment error:', error);
+          showToast('Error creating equipment: ' + error.message, 'error');
+        }
+      };
+
+      const handleUpdateEquipment = async (id, formData) => {
+        try {
+          console.log('Updating equipment:', id, formData);
+          const result = await apiRequest(`/equipment/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(formData)
+          });
+          
+          console.log('Update equipment result:', result);
+          if (result.success) {
+            await loadData();
+            setEditingEquipment(null);
+            showToast('Equipment updated successfully!');
+          }
+        } catch (error) {
+          console.error('Update equipment error:', error);
+          showToast('Error updating equipment: ' + error.message, 'error');
+        }
+      };
+
+      const handleDeleteEquipment = async (id, name) => {
+        if (!confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) {
+          return;
+        }
+
+        try {
+          console.log('Deleting equipment:', id);
+          const result = await apiRequest(`/equipment/${id}`, {
+            method: 'DELETE'
+          });
+          
+          console.log('Delete equipment result:', result);
+          if (result.success) {
+            await loadData();
+            showToast('Equipment deleted successfully!');
+          }
+        } catch (error) {
+          console.error('Delete equipment error:', error);
+          showToast('Error deleting equipment: ' + error.message, 'error');
         }
       };
 
@@ -905,9 +1208,33 @@
             borderRadius: '0.5rem',
             padding: '1.5rem'
           }}>
-            <h2 style={{ color: '#00ff88', marginBottom: '1rem' }}>
-              Equipment Inventory
-            </h2>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1rem'
+            }}>
+              <h2 style={{ color: '#00ff88' }}>
+                Equipment Inventory
+              </h2>
+              <button
+                onClick={() => setShowCreateEquipModal(true)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: 'linear-gradient(135deg, #00ff88 0%, #00d9ff 100%)',
+                  borderRadius: '0.375rem',
+                  color: '#0a0a0a',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  border: 'none'
+                }}
+              >
+                + ADD EQUIPMENT
+              </button>
+            </div>
             {equipment.length === 0 ? (
               <div style={{ 
                 textAlign: 'center', 
@@ -931,30 +1258,88 @@
                       alignItems: 'center'
                     }}
                   >
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: '500' }}>{item.name}</div>
                       <div style={{ 
                         fontSize: '0.85rem',
                         color: 'rgba(255,255,255,0.6)',
                         marginTop: '0.25rem'
                       }}>
-                        {item.manufacturer} • {item.category}
+                        {item.manufacturer} {item.model ? `• ${item.model}` : ''} {item.category_id ? `• ${item.category_id}` : ''}
                       </div>
                     </div>
-                    <div style={{
-                      padding: '0.25rem 0.75rem',
-                      background: 
-                        item.status === 'operational' ? 'rgba(0, 255, 136, 0.2)' :
-                        item.status === 'maintenance' ? 'rgba(255, 234, 0, 0.2)' :
-                        'rgba(255, 0, 85, 0.2)',
-                      border: `1px solid ${
-                        item.status === 'operational' ? '#00ff88' :
-                        item.status === 'maintenance' ? '#ffea00' :
-                        '#ff0055'
-                      }`,
-                      borderRadius: '0.25rem',
-                      fontSize: '0.85rem',
-                      color: 
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <div style={{
+                        padding: '0.25rem 0.75rem',
+                        background: 
+                          item.status === 'operational' ? 'rgba(0, 255, 136, 0.2)' :
+                          item.status === 'maintenance' ? 'rgba(255, 234, 0, 0.2)' :
+                          'rgba(255, 0, 85, 0.2)',
+                        border: `1px solid ${
+                          item.status === 'operational' ? '#00ff88' :
+                          item.status === 'maintenance' ? '#ffea00' :
+                          '#ff0055'
+                        }`,
+                        borderRadius: '0.25rem',
+                        fontSize: '0.75rem',
+                        color: 
+                          item.status === 'operational' ? '#00ff88' :
+                          item.status === 'maintenance' ? '#ffea00' :
+                          '#ff0055',
+                        textTransform: 'uppercase'
+                      }}>
+                        {item.status}
+                      </div>
+                      <button
+                        onClick={() => setViewingEquipment(item)}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          background: 'rgba(0, 255, 136, 0.1)',
+                          border: '1px solid #00ff88',
+                          borderRadius: '0.375rem',
+                          color: '#00ff88',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          fontWeight: '500'
+                        }}
+                      >
+                        VIEW
+                      </button>
+                      <button
+                        onClick={() => setEditingEquipment(item)}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          background: 'rgba(0, 217, 255, 0.1)',
+                          border: '1px solid #00d9ff',
+                          borderRadius: '0.375rem',
+                          color: '#00d9ff',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          fontWeight: '500'
+                        }}
+                      >
+                        EDIT
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEquipment(item.id, item.name)}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          background: 'rgba(255, 0, 85, 0.1)',
+                          border: '1px solid #ff0055',
+                          borderRadius: '0.375rem',
+                          color: '#ff0055',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          fontWeight: '500'
+                        }}
+                      >
+                        DELETE
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )} 
                         item.status === 'operational' ? '#00ff88' :
                         item.status === 'maintenance' ? '#ffea00' :
                         '#ff0055'
@@ -1281,6 +1666,335 @@
                     document={editingDocument}
                     onSave={(formData) => handleUpdateDocument(editingDocument.id, formData)}
                     onCancel={() => setEditingDocument(null)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Create Equipment Modal */}
+          {showCreateEquipModal && (
+            <div 
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.85)',
+                backdropFilter: 'blur(4px)',
+                zIndex: 50,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1rem'
+              }}
+              onClick={() => setShowCreateEquipModal(false)}
+            >
+              <div 
+                style={{
+                  background: '#1a1a1a',
+                  border: '2px solid #00ff88',
+                  borderRadius: '0.5rem',
+                  maxWidth: '600px',
+                  width: '100%',
+                  maxHeight: '90vh',
+                  overflow: 'auto',
+                  boxShadow: '0 0 60px rgba(0, 255, 136, 0.4)'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{
+                  padding: '1.5rem',
+                  borderBottom: '1px solid rgba(0, 255, 136, 0.3)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <h2 style={{ color: '#00ff88', fontSize: '1.25rem' }}>ADD NEW EQUIPMENT</h2>
+                  <button
+                    onClick={() => setShowCreateEquipModal(false)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'white',
+                      fontSize: '1.5rem',
+                      cursor: 'pointer',
+                      padding: '0.25rem'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div style={{ padding: '1.5rem' }}>
+                  <EquipmentForm 
+                    onSave={handleCreateEquipment}
+                    onCancel={() => setShowCreateEquipModal(false)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* View Equipment Modal */}
+          {viewingEquipment && (
+            <div 
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.85)',
+                backdropFilter: 'blur(4px)',
+                zIndex: 50,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1rem'
+              }}
+              onClick={() => setViewingEquipment(null)}
+            >
+              <div 
+                style={{
+                  background: '#1a1a1a',
+                  border: '2px solid #00ff88',
+                  borderRadius: '0.5rem',
+                  maxWidth: '700px',
+                  width: '100%',
+                  maxHeight: '90vh',
+                  overflow: 'auto',
+                  boxShadow: '0 0 60px rgba(0, 255, 136, 0.4)'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{
+                  padding: '1.5rem',
+                  borderBottom: '1px solid rgba(0, 255, 136, 0.3)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ color: '#00ff88', fontSize: '1.5rem', marginBottom: '0.5rem' }}>
+                      {viewingEquipment.name}
+                    </h2>
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <div style={{
+                        padding: '0.25rem 0.75rem',
+                        background: 'rgba(0, 255, 136, 0.1)',
+                        border: '1px solid #00ff88',
+                        borderRadius: '0.25rem',
+                        fontSize: '0.75rem',
+                        color: '#00ff88',
+                        textTransform: 'uppercase'
+                      }}>
+                        {viewingEquipment.category_id}
+                      </div>
+                      <div style={{
+                        padding: '0.25rem 0.75rem',
+                        background: 
+                          viewingEquipment.status === 'operational' ? 'rgba(0, 255, 136, 0.1)' :
+                          viewingEquipment.status === 'maintenance' ? 'rgba(255, 234, 0, 0.1)' :
+                          'rgba(255, 0, 85, 0.1)',
+                        border: `1px solid ${
+                          viewingEquipment.status === 'operational' ? '#00ff88' :
+                          viewingEquipment.status === 'maintenance' ? '#ffea00' :
+                          '#ff0055'
+                        }`,
+                        borderRadius: '0.25rem',
+                        fontSize: '0.75rem',
+                        color: 
+                          viewingEquipment.status === 'operational' ? '#00ff88' :
+                          viewingEquipment.status === 'maintenance' ? '#ffea00' :
+                          '#ff0055',
+                        textTransform: 'uppercase'
+                      }}>
+                        {viewingEquipment.status}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setViewingEquipment(null)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'white',
+                      fontSize: '1.5rem',
+                      cursor: 'pointer',
+                      padding: '0.25rem',
+                      marginLeft: '1rem'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div style={{ padding: '1.5rem' }}>
+                  <div style={{
+                    padding: '1rem',
+                    background: 'rgba(0, 255, 136, 0.05)',
+                    border: '1px solid rgba(0, 255, 136, 0.2)',
+                    borderRadius: '0.375rem',
+                    marginBottom: '1.5rem'
+                  }}>
+                    <div style={{ 
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '1rem',
+                      fontSize: '0.85rem'
+                    }}>
+                      {viewingEquipment.manufacturer && (
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '0.25rem' }}>
+                            Manufacturer
+                          </div>
+                          <div style={{ color: 'white' }}>
+                            {viewingEquipment.manufacturer}
+                          </div>
+                        </div>
+                      )}
+                      {viewingEquipment.model && (
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '0.25rem' }}>
+                            Model
+                          </div>
+                          <div style={{ color: 'white' }}>
+                            {viewingEquipment.model}
+                          </div>
+                        </div>
+                      )}
+                      {viewingEquipment.serial_number && (
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '0.25rem' }}>
+                            Serial Number
+                          </div>
+                          <div style={{ color: 'white' }}>
+                            {viewingEquipment.serial_number}
+                          </div>
+                        </div>
+                      )}
+                      {viewingEquipment.location && (
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '0.25rem' }}>
+                            Location
+                          </div>
+                          <div style={{ color: 'white' }}>
+                            {viewingEquipment.location}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {viewingEquipment.notes && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <div style={{ 
+                        fontSize: '0.85rem', 
+                        color: 'rgba(255,255,255,0.5)',
+                        marginBottom: '0.5rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px'
+                      }}>
+                        Notes
+                      </div>
+                      <div style={{ 
+                        color: 'white',
+                        lineHeight: '1.6',
+                        whiteSpace: 'pre-wrap'
+                      }}>
+                        {viewingEquipment.notes}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => {
+                        setEditingEquipment(viewingEquipment);
+                        setViewingEquipment(null);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '0.75rem',
+                        background: 'rgba(0, 217, 255, 0.1)',
+                        border: '1px solid #00d9ff',
+                        borderRadius: '0.375rem',
+                        color: '#00d9ff',
+                        cursor: 'pointer',
+                        fontWeight: '500'
+                      }}
+                    >
+                      EDIT EQUIPMENT
+                    </button>
+                    <button
+                      onClick={() => setViewingEquipment(null)}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        background: 'transparent',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '0.375rem',
+                        color: 'white',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      CLOSE
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Equipment Modal */}
+          {editingEquipment && (
+            <div 
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.85)',
+                backdropFilter: 'blur(4px)',
+                zIndex: 50,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1rem'
+              }}
+              onClick={() => setEditingEquipment(null)}
+            >
+              <div 
+                style={{
+                  background: '#1a1a1a',
+                  border: '2px solid #00d9ff',
+                  borderRadius: '0.5rem',
+                  maxWidth: '600px',
+                  width: '100%',
+                  maxHeight: '90vh',
+                  overflow: 'auto',
+                  boxShadow: '0 0 60px rgba(0, 217, 255, 0.4)'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{
+                  padding: '1.5rem',
+                  borderBottom: '1px solid rgba(0, 217, 255, 0.3)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <h2 style={{ color: '#00d9ff', fontSize: '1.25rem' }}>EDIT EQUIPMENT</h2>
+                  <button
+                    onClick={() => setEditingEquipment(null)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'white',
+                      fontSize: '1.5rem',
+                      cursor: 'pointer',
+                      padding: '0.25rem'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div style={{ padding: '1.5rem' }}>
+                  <EquipmentForm 
+                    equipment={editingEquipment}
+                    onSave={(formData) => handleUpdateEquipment(editingEquipment.id, formData)}
+                    onCancel={() => setEditingEquipment(null)}
                   />
                 </div>
               </div>
