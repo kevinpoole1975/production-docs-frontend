@@ -542,9 +542,10 @@
           const docsData = await apiRequest('/documents');
           console.log('Documents response:', docsData);
           if (docsData.success && docsData.data) {
-            // Ensure it's an array
-            const docs = Array.isArray(docsData.data) ? docsData.data : [];
-            setDocuments(docs);
+            // Handle nested structure - documents are in data.documents
+            const docs = docsData.data.documents || docsData.data;
+            setDocuments(Array.isArray(docs) ? docs : []);
+            console.log('Set documents:', docs);
           } else {
             setDocuments([]);
           }
@@ -553,9 +554,10 @@
           const equipData = await apiRequest('/equipment');
           console.log('Equipment response:', equipData);
           if (equipData.success && equipData.data) {
-            // Ensure it's an array
-            const equip = Array.isArray(equipData.data) ? equipData.data : [];
-            setEquipment(equip);
+            // Handle nested structure if equipment uses same pattern
+            const equip = equipData.data.equipment || equipData.data;
+            setEquipment(Array.isArray(equip) ? equip : []);
+            console.log('Set equipment:', equip);
           } else {
             setEquipment([]);
           }
