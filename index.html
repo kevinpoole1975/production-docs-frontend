@@ -344,12 +344,189 @@
       );
     };
 
+    // ==================== CREATE DOCUMENT FORM ====================
+    const CreateDocumentForm = ({ onSave, onCancel }) => {
+      const [formData, setFormData] = useState({
+        title: '',
+        category: 'audio',
+        document_type: 'procedure',
+        content: '',
+        status: 'draft'
+      });
+      const [saving, setSaving] = useState(false);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        await onSave(formData);
+        setSaving(false);
+      };
+
+      return (
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                color: '#00d9ff', 
+                fontSize: '0.85rem',
+                fontWeight: '500'
+              }}>
+                TITLE *
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+                style={{ width: '100%' }}
+                placeholder="Enter document title"
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: '#00d9ff', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
+                  CATEGORY
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  style={{ width: '100%' }}
+                >
+                  <option value="audio">Audio</option>
+                  <option value="video">Video</option>
+                  <option value="lighting">Lighting</option>
+                  <option value="network">Network</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: '#00d9ff', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
+                  TYPE
+                </label>
+                <select
+                  value={formData.document_type}
+                  onChange={(e) => setFormData({ ...formData, document_type: e.target.value })}
+                  style={{ width: '100%' }}
+                >
+                  <option value="procedure">Procedure</option>
+                  <option value="signal-flow">Signal Flow</option>
+                  <option value="topology">Topology</option>
+                  <option value="patching">Patching</option>
+                  <option value="troubleshooting">Troubleshooting</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                color: '#00d9ff', 
+                fontSize: '0.85rem',
+                fontWeight: '500'
+              }}>
+                CONTENT *
+              </label>
+              <textarea
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                required
+                rows="8"
+                style={{ width: '100%', resize: 'vertical' }}
+                placeholder="Enter document content..."
+              />
+            </div>
+
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.5rem', 
+                color: '#00d9ff', 
+                fontSize: '0.85rem',
+                fontWeight: '500'
+              }}>
+                STATUS
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                style={{ width: '100%' }}
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <button
+                type="submit"
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  background: saving ? '#666' : 'linear-gradient(135deg, #00d9ff 0%, #00ff88 100%)',
+                  borderRadius: '0.375rem',
+                  border: 'none',
+                  color: '#0a0a0a',
+                  fontWeight: 'bold',
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                {saving ? (
+                  <>
+                    <span className="spinner" style={{ width: '16px', height: '16px', borderTopColor: '#0a0a0a' }} />
+                    SAVING...
+                  </>
+                ) : (
+                  'SAVE DOCUMENT'
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '0.375rem',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </form>
+      );
+    };
+
     // ==================== MAIN APP COMPONENT ====================
     const MainApp = ({ user, onLogout }) => {
       const [documents, setDocuments] = useState([]);
       const [equipment, setEquipment] = useState([]);
       const [loading, setLoading] = useState(true);
       const [toast, setToast] = useState(null);
+      const [showCreateDocModal, setShowCreateDocModal] = useState(false);
 
       // Load initial data
       useEffect(() => {
@@ -398,6 +575,23 @@
       const showToast = (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
+      };
+
+      const handleCreateDocument = async (formData) => {
+        try {
+          const result = await apiRequest('/documents', {
+            method: 'POST',
+            body: JSON.stringify(formData)
+          });
+          
+          if (result.success) {
+            await loadData();
+            setShowCreateDocModal(false);
+            showToast('Document created successfully!');
+          }
+        } catch (error) {
+          showToast('Error creating document: ' + error.message, 'error');
+        }
       };
 
       const handleLogout = () => {
@@ -530,9 +724,33 @@
             padding: '1.5rem',
             marginBottom: '2rem'
           }}>
-            <h2 style={{ color: '#00d9ff', marginBottom: '1rem' }}>
-              Recent Documents
-            </h2>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1rem'
+            }}>
+              <h2 style={{ color: '#00d9ff' }}>
+                Recent Documents
+              </h2>
+              <button
+                onClick={() => setShowCreateDocModal(true)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: 'linear-gradient(135deg, #00d9ff 0%, #00ff88 100%)',
+                  borderRadius: '0.375rem',
+                  color: '#0a0a0a',
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  border: 'none'
+                }}
+              >
+                + NEW DOCUMENT
+              </button>
+            </div>
             {documents.length === 0 ? (
               <div style={{ 
                 textAlign: 'center', 
@@ -650,6 +868,67 @@
               </div>
             )}
           </div>
+
+          {/* Create Document Modal */}
+          {showCreateDocModal && (
+            <div 
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.85)',
+                backdropFilter: 'blur(4px)',
+                zIndex: 50,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1rem'
+              }}
+              onClick={() => setShowCreateDocModal(false)}
+            >
+              <div 
+                style={{
+                  background: '#1a1a1a',
+                  border: '2px solid #00d9ff',
+                  borderRadius: '0.5rem',
+                  maxWidth: '600px',
+                  width: '100%',
+                  maxHeight: '90vh',
+                  overflow: 'auto',
+                  boxShadow: '0 0 60px rgba(0, 217, 255, 0.4)'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{
+                  padding: '1.5rem',
+                  borderBottom: '1px solid rgba(0, 217, 255, 0.3)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <h2 style={{ color: '#00d9ff', fontSize: '1.25rem' }}>CREATE NEW DOCUMENT</h2>
+                  <button
+                    onClick={() => setShowCreateDocModal(false)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'white',
+                      fontSize: '1.5rem',
+                      cursor: 'pointer',
+                      padding: '0.25rem'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div style={{ padding: '1.5rem' }}>
+                  <CreateDocumentForm 
+                    onSave={handleCreateDocument}
+                    onCancel={() => setShowCreateDocModal(false)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Toast Notification */}
           {toast && (
