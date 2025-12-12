@@ -621,6 +621,28 @@
         }
       };
 
+      const handleDeleteDocument = async (id, title) => {
+        if (!confirm(`Are you sure you want to delete "${title}"? This cannot be undone.`)) {
+          return;
+        }
+
+        try {
+          console.log('Deleting document:', id);
+          const result = await apiRequest(`/documents/${id}`, {
+            method: 'DELETE'
+          });
+          
+          console.log('Delete document result:', result);
+          if (result.success) {
+            await loadData();
+            showToast('Document deleted successfully!');
+          }
+        } catch (error) {
+          console.error('Delete document error:', error);
+          showToast('Error deleting document: ' + error.message, 'error');
+        }
+      };
+
       const handleLogout = () => {
         removeAuthToken();
         onLogout();
@@ -837,6 +859,21 @@
                         }}
                       >
                         EDIT
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDocument(doc.id, doc.title)}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          background: 'rgba(255, 0, 85, 0.1)',
+                          border: '1px solid #ff0055',
+                          borderRadius: '0.375rem',
+                          color: '#ff0055',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          fontWeight: '500'
+                        }}
+                      >
+                        DELETE
                       </button>
                     </div>
                   </div>
