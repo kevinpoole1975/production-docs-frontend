@@ -425,6 +425,27 @@
                   fontSize: '0.85rem',
                   fontWeight: '500'
                 }}>
+                  TYPE
+                </label>
+                <input
+                  type="text"
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  style={{ width: '100%' }}
+                  placeholder="e.g., Microphone, Console, Amplifier"
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: '#00ff88', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
                   STATUS
                 </label>
                 <select
@@ -436,6 +457,25 @@
                   <option value="maintenance">Maintenance</option>
                   <option value="offline">Offline</option>
                 </select>
+              </div>
+
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  color: '#00ff88', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
+                  LOCATION
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  style={{ width: '100%' }}
+                  placeholder="e.g., FOH, Stage Left, Rack 3"
+                />
               </div>
             </div>
 
@@ -499,24 +539,7 @@
                 />
               </div>
 
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  color: '#00ff88', 
-                  fontSize: '0.85rem',
-                  fontWeight: '500'
-                }}>
-                  LOCATION
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  style={{ width: '100%' }}
-                  placeholder="e.g., FOH, Stage Left, Rack 3"
-                />
-              </div>
+              <div></div>
             </div>
 
             <div>
@@ -893,9 +916,16 @@
       const handleCreateEquipment = async (formData) => {
         try {
           console.log('Creating equipment:', formData);
+          
+          // Convert empty strings to null for the backend
+          const cleanedData = {};
+          for (const [key, value] of Object.entries(formData)) {
+            cleanedData[key] = value === '' ? null : value;
+          }
+          
           const result = await apiRequest('/equipment', {
             method: 'POST',
-            body: JSON.stringify(formData)
+            body: JSON.stringify(cleanedData)
           });
           
           console.log('Create equipment result:', result);
@@ -913,9 +943,16 @@
       const handleUpdateEquipment = async (id, formData) => {
         try {
           console.log('Updating equipment:', id, formData);
+          
+          // Convert empty strings to null for the backend
+          const cleanedData = {};
+          for (const [key, value] of Object.entries(formData)) {
+            cleanedData[key] = value === '' ? null : value;
+          }
+          
           const result = await apiRequest(`/equipment/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(formData)
+            body: JSON.stringify(cleanedData)
           });
           
           console.log('Update equipment result:', result);
