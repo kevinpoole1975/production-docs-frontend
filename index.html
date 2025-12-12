@@ -798,6 +798,9 @@
       const [showCreateEquipModal, setShowCreateEquipModal] = useState(false);
       const [editingEquipment, setEditingEquipment] = useState(null);
       const [viewingEquipment, setViewingEquipment] = useState(null);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [categoryFilter, setCategoryFilter] = useState('all');
+      const [statusFilter, setStatusFilter] = useState('all');
 
       // Load initial data
       useEffect(() => {
@@ -989,6 +992,25 @@
         }
       };
 
+      // Filter logic
+      const filteredDocuments = documents.filter(doc => {
+        const matchesSearch = !searchQuery || 
+          doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          doc.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = categoryFilter === 'all' || doc.category_id === categoryFilter;
+        return matchesSearch && matchesCategory;
+      });
+
+      const filteredEquipment = equipment.filter(eq => {
+        const matchesSearch = !searchQuery ||
+          eq.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          eq.manufacturer?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          eq.model?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = categoryFilter === 'all' || eq.category_id === categoryFilter;
+        const matchesStatus = statusFilter === 'all' || eq.status === statusFilter;
+        return matchesSearch && matchesCategory && matchesStatus;
+      });
+
       const handleLogout = () => {
         removeAuthToken();
         onLogout();
@@ -1126,7 +1148,7 @@
               marginBottom: '1rem'
             }}>
               <h2 style={{ color: '#00d9ff' }}>
-                Recent Documents
+                Documents ({filteredDocuments.length})
               </h2>
               <button
                 onClick={() => setShowCreateDocModal(true)}
@@ -1146,17 +1168,85 @@
                 + NEW DOCUMENT
               </button>
             </div>
-            {documents.length === 0 ? (
+
+            {/* Search and Filter */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '0.75rem', 
+              marginBottom: '1rem',
+              flexWrap: 'wrap'
+            }}>
+              <input
+                type="text"
+                placeholder="Search documents..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  flex: 1,
+                  minWidth: '200px',
+                  padding: '0.5rem 0.75rem',
+                  background: '#2a2a2a',
+                  border: '1px solid rgba(0, 217, 255, 0.3)',
+                  borderRadius: '0.375rem',
+                  color: 'white',
+                  fontSize: '0.85rem'
+                }}
+              />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  background: '#2a2a2a',
+                  border: '1px solid rgba(0, 217, 255, 0.3)',
+                  borderRadius: '0.375rem',
+                  color: 'white',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">All Categories</option>
+                <option value="audio">Audio</option>
+                <option value="video">Video</option>
+                <option value="lighting">Lighting</option>
+                <option value="network">Network</option>
+              </select>
+              {(searchQuery || categoryFilter !== 'all') && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCategoryFilter('all');
+                  }}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    background: 'rgba(255, 0, 85, 0.1)',
+                    border: '1px solid #ff0055',
+                    borderRadius: '0.375rem',
+                    color: '#ff0055',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  CLEAR
+                </button>
+              )}
+            </div>
+
+            {filteredDocuments.length === 0 ? (
               <div style={{ 
                 textAlign: 'center', 
                 padding: '2rem',
                 color: 'rgba(255,255,255,0.5)'
               }}>
-                No documents yet. Create your first document to get started!
+                {documents.length === 0 
+                  ? 'No documents yet. Create your first document to get started!'
+                  : 'No documents match your search or filters.'
+                }
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {documents.slice(0, 5).map(doc => (
+                {filteredDocuments.slice(0, 10).map(doc => (
                   <div
                     key={doc.id}
                     style={{
@@ -1257,7 +1347,7 @@
               marginBottom: '1rem'
             }}>
               <h2 style={{ color: '#00ff88' }}>
-                Equipment Inventory
+                Equipment ({filteredEquipment.length})
               </h2>
               <button
                 onClick={() => setShowCreateEquipModal(true)}
@@ -1277,17 +1367,104 @@
                 + ADD EQUIPMENT
               </button>
             </div>
-            {equipment.length === 0 ? (
+
+            {/* Search and Filter */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '0.75rem', 
+              marginBottom: '1rem',
+              flexWrap: 'wrap'
+            }}>
+              <input
+                type="text"
+                placeholder="Search equipment..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  flex: 1,
+                  minWidth: '200px',
+                  padding: '0.5rem 0.75rem',
+                  background: '#2a2a2a',
+                  border: '1px solid rgba(0, 255, 136, 0.3)',
+                  borderRadius: '0.375rem',
+                  color: 'white',
+                  fontSize: '0.85rem'
+                }}
+              />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  background: '#2a2a2a',
+                  border: '1px solid rgba(0, 255, 136, 0.3)',
+                  borderRadius: '0.375rem',
+                  color: 'white',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">All Categories</option>
+                <option value="audio">Audio</option>
+                <option value="video">Video</option>
+                <option value="lighting">Lighting</option>
+                <option value="network">Network</option>
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  background: '#2a2a2a',
+                  border: '1px solid rgba(0, 255, 136, 0.3)',
+                  borderRadius: '0.375rem',
+                  color: 'white',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">All Status</option>
+                <option value="operational">Operational</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="offline">Offline</option>
+              </select>
+              {(searchQuery || categoryFilter !== 'all' || statusFilter !== 'all') && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCategoryFilter('all');
+                    setStatusFilter('all');
+                  }}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    background: 'rgba(255, 0, 85, 0.1)',
+                    border: '1px solid #ff0055',
+                    borderRadius: '0.375rem',
+                    color: '#ff0055',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  CLEAR
+                </button>
+              )}
+            </div>
+
+            {filteredEquipment.length === 0 ? (
               <div style={{ 
                 textAlign: 'center', 
                 padding: '2rem',
                 color: 'rgba(255,255,255,0.5)'
               }}>
-                No equipment registered yet. Add your first equipment item!
+                {equipment.length === 0
+                  ? 'No equipment registered yet. Add your first equipment item!'
+                  : 'No equipment matches your search or filters.'
+                }
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {equipment.slice(0, 5).map(item => (
+                {filteredEquipment.slice(0, 10).map(item => (
                   <div
                     key={item.id}
                     style={{
