@@ -2094,17 +2094,20 @@
                         return parts.map((part, index) => {
                           if (part.startsWith('[TABLE:')) {
                             try {
-                              const tableData = JSON.parse(part.replace('[TABLE:', '').replace(']', ''));
+                              const jsonStr = part.substring(7, part.length - 1); // Remove [TABLE: and ]
+                              const tableData = JSON.parse(jsonStr);
                               return (
                                 <div key={index} style={{ margin: '1.5rem 0' }}>
-                                  <div style={{ 
-                                    fontSize: '0.9rem', 
-                                    fontWeight: '500',
-                                    color: '#00d9ff',
-                                    marginBottom: '0.75rem'
-                                  }}>
-                                    📊 {tableData.name}
-                                  </div>
+                                  {tableData.name && (
+                                    <div style={{ 
+                                      fontSize: '0.9rem', 
+                                      fontWeight: '500',
+                                      color: '#00d9ff',
+                                      marginBottom: '0.75rem'
+                                    }}>
+                                      📊 {tableData.name}
+                                    </div>
+                                  )}
                                   <div style={{ overflowX: 'auto' }}>
                                     <table style={{ 
                                       width: '100%',
@@ -2114,7 +2117,7 @@
                                     }}>
                                       <thead>
                                         <tr>
-                                          {tableData.columns.map((col, i) => (
+                                          {tableData.columns && tableData.columns.map((col, i) => (
                                             <th key={i} style={{
                                               padding: '0.75rem',
                                               background: '#2a2a2a',
@@ -2130,7 +2133,7 @@
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        {tableData.rows.map((row, rowIndex) => (
+                                        {tableData.rows && tableData.rows.map((row, rowIndex) => (
                                           <tr key={rowIndex}>
                                             {row.map((cell, cellIndex) => (
                                               <td key={cellIndex} style={{
@@ -2150,10 +2153,11 @@
                                 </div>
                               );
                             } catch (e) {
-                              return <span key={index}>{part}</span>;
+                              console.error('Error parsing table:', e, part);
+                              return <div key={index} style={{ color: '#ff0055', fontSize: '0.85rem', padding: '0.5rem', background: 'rgba(255,0,85,0.1)', borderRadius: '0.25rem', margin: '0.5rem 0' }}>Error rendering table</div>;
                             }
                           }
-                          return <span key={index} style={{ whiteSpace: 'pre-wrap' }}>{part}</span>;
+                          return part ? <span key={index} style={{ whiteSpace: 'pre-wrap' }}>{part}</span> : null;
                         });
                       })()}
                     </div>
