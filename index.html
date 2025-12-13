@@ -2712,6 +2712,9 @@
                         }
                       } catch (e) {
                         console.error(`Error parsing ${markerType}:`, e);
+                        console.error('Failed content string:', contentStr);
+                        console.error('Marker type:', markerType);
+                        console.error('JSON string:', jsonStr);
                         elements.push(
                           <div key={elements.length} style={{ 
                             color: '#ff0055', 
@@ -2721,7 +2724,7 @@
                             borderRadius: '0.25rem', 
                             margin: '0.5rem 0' 
                           }}>
-                            Error rendering {markerType.toLowerCase()}
+                            Error rendering {markerType.toLowerCase()}: {e.message}
                           </div>
                         );
                       }
