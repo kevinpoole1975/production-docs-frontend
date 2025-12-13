@@ -615,6 +615,21 @@
       const [columns, setColumns] = useState(['Input', 'Output', 'Notes']);
       const [rows, setRows] = useState([['', '', '']]);
 
+      // Listen for table data to load
+      React.useEffect(() => {
+        const handleLoadTableData = (event) => {
+          const table = event.detail;
+          if (table) {
+            setTableName(table.name || '');
+            setColumns(table.columns || ['Column 1']);
+            setRows(table.rows || [['']]);
+          }
+        };
+        
+        window.addEventListener('loadTableData', handleLoadTableData);
+        return () => window.removeEventListener('loadTableData', handleLoadTableData);
+      }, []);
+
       const templates = {
         'input-list': {
           name: 'Input List',
@@ -1115,28 +1130,61 @@
                               {table.columns?.length || 0} columns × {table.rows?.length || 0} rows
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!confirm(`Delete table "${table.name || 'Untitled'}"?`)) return;
-                              const tableStr = `[TABLE:${JSON.stringify(table)}]`;
-                              const newDesc = formData.description.replace(tableStr, '');
-                              setFormData({ ...formData, description: newDesc });
-                              setTables(tables.filter((_, i) => i !== tableIndex));
-                            }}
-                            style={{
-                              padding: '0.4rem 0.75rem',
-                              background: 'rgba(255, 0, 85, 0.1)',
-                              border: '1px solid #ff0055',
-                              borderRadius: '0.25rem',
-                              color: '#ff0055',
-                              fontSize: '0.75rem',
-                              cursor: 'pointer',
-                              fontWeight: '500'
-                            }}
-                          >
-                            DELETE
-                          </button>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                // Remove old table from description
+                                const oldTableStr = `[TABLE:${JSON.stringify(table)}]`;
+                                const newDesc = formData.description.replace(oldTableStr, '');
+                                setFormData({ ...formData, description: newDesc });
+                                setTables(tables.filter((_, i) => i !== tableIndex));
+                                
+                                // Show table builder pre-populated with this table's data
+                                setShowTableBuilder(true);
+                                
+                                // Pre-populate the table builder
+                                setTimeout(() => {
+                                  const event = new CustomEvent('loadTableData', { detail: table });
+                                  window.dispatchEvent(event);
+                                }, 100);
+                              }}
+                              style={{
+                                padding: '0.4rem 0.75rem',
+                                background: 'rgba(0, 217, 255, 0.1)',
+                                border: '1px solid #00d9ff',
+                                borderRadius: '0.25rem',
+                                color: '#00d9ff',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                fontWeight: '500'
+                              }}
+                            >
+                              EDIT
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!confirm(`Delete table "${table.name || 'Untitled'}"?`)) return;
+                                const tableStr = `[TABLE:${JSON.stringify(table)}]`;
+                                const newDesc = formData.description.replace(tableStr, '');
+                                setFormData({ ...formData, description: newDesc });
+                                setTables(tables.filter((_, i) => i !== tableIndex));
+                              }}
+                              style={{
+                                padding: '0.4rem 0.75rem',
+                                background: 'rgba(255, 0, 85, 0.1)',
+                                border: '1px solid #ff0055',
+                                borderRadius: '0.25rem',
+                                color: '#ff0055',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                fontWeight: '500'
+                              }}
+                            >
+                              DELETE
+                            </button>
+                          </div>
                         </div>
                         
                         {/* Table Preview */}
@@ -1154,11 +1202,11 @@
                           }}>
                             <thead>
                               <tr>
-                                {table.columns?.map((col, i) => (
+                                {(table.columns || []).map((col, i) => (
                                   <th key={i} style={{
                                     padding: '0.4rem',
                                     background: '#1a1a1a',
-                                    borderRight: i < table.columns.length - 1 ? '1px solid rgba(0, 217, 255, 0.15)' : 'none',
+                                    borderRight: i < (table.columns || []).length - 1 ? '1px solid rgba(0, 217, 255, 0.15)' : 'none',
                                     color: '#00d9ff',
                                     fontSize: '0.7rem',
                                     fontWeight: '500',
@@ -1170,7 +1218,7 @@
                               </tr>
                             </thead>
                             <tbody>
-                              {table.rows?.slice(0, 3).map((row, rowIndex) => (
+                              {(table.rows || []).slice(0, 3).map((row, rowIndex) => (
                                 <tr key={rowIndex}>
                                   {row.map((cell, cellIndex) => (
                                     <td key={cellIndex} style={{
@@ -1185,10 +1233,10 @@
                                   ))}
                                 </tr>
                               ))}
-                              {table.rows?.length > 3 && (
+                              {(table.rows || []).length > 3 && (
                                 <tr>
                                   <td 
-                                    colSpan={table.columns?.length}
+                                    colSpan={(table.columns || []).length}
                                     style={{
                                       padding: '0.4rem',
                                       textAlign: 'center',
@@ -1198,7 +1246,7 @@
                                       borderTop: '1px solid rgba(0, 217, 255, 0.1)'
                                     }}
                                   >
-                                    +{table.rows.length - 3} more rows...
+                                    +{(table.rows || []).length - 3} more rows...
                                   </td>
                                 </tr>
                               )}
@@ -1211,13 +1259,13 @@
                   <div style={{
                     marginTop: '0.75rem',
                     padding: '0.5rem',
-                    background: 'rgba(255, 234, 0, 0.05)',
-                    border: '1px solid rgba(255, 234, 0, 0.2)',
+                    background: 'rgba(0, 217, 255, 0.05)',
+                    border: '1px solid rgba(0, 217, 255, 0.2)',
                     borderRadius: '0.25rem',
                     fontSize: '0.75rem',
-                    color: 'rgba(255, 234, 0, 0.8)'
+                    color: 'rgba(0, 217, 255, 0.8)'
                   }}>
-                    💡 Tip: To edit a table, delete it and create a new one with the updated data.
+                    💡 Click EDIT to modify a table, or DELETE to remove it completely.
                   </div>
                 </div>
               )}
