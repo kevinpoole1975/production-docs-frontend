@@ -609,6 +609,301 @@
       );
     };
 
+    // ==================== TABLE BUILDER ====================
+    const TableBuilder = ({ onInsert, onCancel }) => {
+      const [tableName, setTableName] = useState('');
+      const [columns, setColumns] = useState(['Input', 'Output', 'Notes']);
+      const [rows, setRows] = useState([['', '', '']]);
+
+      const templates = {
+        'input-list': {
+          name: 'Input List',
+          columns: ['#', 'Input Name', 'Source', 'Connector', 'Notes'],
+          rows: [['1', '', '', 'XLR', '']]
+        },
+        'output-list': {
+          name: 'Output List',
+          columns: ['#', 'Output Name', 'Destination', 'Connector', 'Notes'],
+          rows: [['1', '', '', 'XLR', '']]
+        },
+        'patch-panel': {
+          name: 'Patch Panel',
+          columns: ['Front', 'Rear', 'Signal', 'Status'],
+          rows: [['1', '1', '', 'Active']]
+        },
+        'signal-flow': {
+          name: 'Signal Flow',
+          columns: ['Source', 'Processing', 'Destination', 'Level'],
+          rows: [['', '', '', '0dB']]
+        },
+        'network': {
+          name: 'Network Devices',
+          columns: ['Device', 'IP Address', 'Subnet', 'Gateway', 'VLAN'],
+          rows: [['', '192.168.1.', '255.255.255.0', '192.168.1.1', '']]
+        }
+      };
+
+      const loadTemplate = (templateKey) => {
+        const template = templates[templateKey];
+        setTableName(template.name);
+        setColumns(template.columns);
+        setRows(template.rows);
+      };
+
+      const addColumn = () => {
+        setColumns([...columns, 'New Column']);
+        setRows(rows.map(row => [...row, '']));
+      };
+
+      const removeColumn = (index) => {
+        setColumns(columns.filter((_, i) => i !== index));
+        setRows(rows.map(row => row.filter((_, i) => i !== index)));
+      };
+
+      const updateColumn = (index, value) => {
+        const newColumns = [...columns];
+        newColumns[index] = value;
+        setColumns(newColumns);
+      };
+
+      const addRow = () => {
+        setRows([...rows, columns.map(() => '')]);
+      };
+
+      const removeRow = (index) => {
+        setRows(rows.filter((_, i) => i !== index));
+      };
+
+      const updateCell = (rowIndex, colIndex, value) => {
+        const newRows = [...rows];
+        newRows[rowIndex][colIndex] = value;
+        setRows(newRows);
+      };
+
+      const handleInsert = () => {
+        const table = {
+          name: tableName || 'Table',
+          columns,
+          rows
+        };
+        onInsert(table);
+      };
+
+      return (
+        <div style={{ background: '#0a0a0a', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid rgba(0, 217, 255, 0.3)' }}>
+          <h3 style={{ color: '#00d9ff', marginBottom: '1rem', fontSize: '1.1rem' }}>TABLE BUILDER</h3>
+
+          {/* Templates */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00d9ff', fontSize: '0.85rem' }}>
+              QUICK TEMPLATES
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {Object.entries(templates).map(([key, template]) => (
+                <button
+                  key={key}
+                  onClick={() => loadTemplate(key)}
+                  type="button"
+                  style={{
+                    padding: '0.4rem 0.75rem',
+                    background: 'rgba(0, 217, 255, 0.1)',
+                    border: '1px solid rgba(0, 217, 255, 0.5)',
+                    borderRadius: '0.25rem',
+                    color: '#00d9ff',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {template.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Table Name */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#00d9ff', fontSize: '0.85rem' }}>
+              TABLE NAME
+            </label>
+            <input
+              type="text"
+              value={tableName}
+              onChange={(e) => setTableName(e.target.value)}
+              placeholder="e.g., Main FOH Inputs"
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          {/* Column Headers */}
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <label style={{ color: '#00d9ff', fontSize: '0.85rem' }}>COLUMNS</label>
+              <button
+                type="button"
+                onClick={addColumn}
+                style={{
+                  padding: '0.25rem 0.5rem',
+                  background: 'rgba(0, 255, 136, 0.1)',
+                  border: '1px solid #00ff88',
+                  borderRadius: '0.25rem',
+                  color: '#00ff88',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer'
+                }}
+              >
+                + Column
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {columns.map((col, i) => (
+                <div key={i} style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={col}
+                    onChange={(e) => updateColumn(i, e.target.value)}
+                    style={{ width: '120px', padding: '0.4rem' }}
+                  />
+                  {columns.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeColumn(i)}
+                      style={{
+                        padding: '0.4rem',
+                        background: 'rgba(255, 0, 85, 0.1)',
+                        border: '1px solid #ff0055',
+                        borderRadius: '0.25rem',
+                        color: '#ff0055',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Table Data */}
+          <div style={{ marginBottom: '1rem', maxHeight: '300px', overflow: 'auto' }} className="scrollbar-custom">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <label style={{ color: '#00d9ff', fontSize: '0.85rem' }}>ROWS</label>
+              <button
+                type="button"
+                onClick={addRow}
+                style={{
+                  padding: '0.25rem 0.5rem',
+                  background: 'rgba(0, 255, 136, 0.1)',
+                  border: '1px solid #00ff88',
+                  borderRadius: '0.25rem',
+                  color: '#00ff88',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer'
+                }}
+              >
+                + Row
+              </button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {columns.map((col, i) => (
+                    <th key={i} style={{
+                      padding: '0.5rem',
+                      background: '#2a2a2a',
+                      border: '1px solid rgba(0, 217, 255, 0.3)',
+                      color: '#00d9ff',
+                      fontSize: '0.75rem',
+                      fontWeight: '500',
+                      textAlign: 'left'
+                    }}>
+                      {col}
+                    </th>
+                  ))}
+                  <th style={{ width: '40px', background: '#2a2a2a', border: '1px solid rgba(0, 217, 255, 0.3)' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {row.map((cell, colIndex) => (
+                      <td key={colIndex} style={{ padding: '0.25rem', border: '1px solid rgba(0, 217, 255, 0.2)' }}>
+                        <input
+                          type="text"
+                          value={cell}
+                          onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
+                          style={{ 
+                            width: '100%', 
+                            padding: '0.4rem', 
+                            background: '#1a1a1a',
+                            border: '1px solid rgba(0, 217, 255, 0.2)',
+                            fontSize: '0.8rem'
+                          }}
+                        />
+                      </td>
+                    ))}
+                    <td style={{ border: '1px solid rgba(0, 217, 255, 0.2)', textAlign: 'center' }}>
+                      {rows.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeRow(rowIndex)}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            background: 'rgba(255, 0, 85, 0.1)',
+                            border: '1px solid #ff0055',
+                            borderRadius: '0.25rem',
+                            color: '#ff0055',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={handleInsert}
+              style={{
+                flex: 1,
+                padding: '0.75rem',
+                background: 'linear-gradient(135deg, #00d9ff 0%, #00ff88 100%)',
+                borderRadius: '0.375rem',
+                color: '#0a0a0a',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              INSERT TABLE
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'transparent',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '0.375rem',
+                color: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              CANCEL
+            </button>
+          </div>
+        </div>
+      );
+    };
+
     // ==================== CREATE/EDIT DOCUMENT FORM ====================
     const DocumentForm = ({ document, onSave, onCancel }) => {
       const [formData, setFormData] = useState({
@@ -619,7 +914,26 @@
         status: document?.status || 'draft'
       });
       const [saving, setSaving] = useState(false);
+      const [showTableBuilder, setShowTableBuilder] = useState(false);
+      const [tables, setTables] = useState([]);
       const isEditing = !!document;
+
+      // Parse existing tables from description if editing
+      React.useEffect(() => {
+        if (document?.description) {
+          const tableMatches = document.description.match(/\[TABLE:.*?\]/gs);
+          if (tableMatches) {
+            const parsedTables = tableMatches.map(match => {
+              try {
+                return JSON.parse(match.replace('[TABLE:', '').replace(']', ''));
+              } catch {
+                return null;
+              }
+            }).filter(Boolean);
+            setTables(parsedTables);
+          }
+        }
+      }, [document]);
 
       const handleSubmit = async (e) => {
         e.preventDefault();
@@ -699,15 +1013,46 @@
             </div>
 
             <div>
-              <label style={{ 
-                display: 'block', 
-                marginBottom: '0.5rem', 
-                color: '#00d9ff', 
-                fontSize: '0.85rem',
-                fontWeight: '500'
-              }}>
-                DESCRIPTION *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <label style={{ 
+                  color: '#00d9ff', 
+                  fontSize: '0.85rem',
+                  fontWeight: '500'
+                }}>
+                  DESCRIPTION *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowTableBuilder(!showTableBuilder)}
+                  style={{
+                    padding: '0.4rem 0.75rem',
+                    background: 'rgba(0, 217, 255, 0.1)',
+                    border: '1px solid #00d9ff',
+                    borderRadius: '0.375rem',
+                    color: '#00d9ff',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  {showTableBuilder ? '− HIDE TABLE BUILDER' : '+ ADD TABLE'}
+                </button>
+              </div>
+
+              {showTableBuilder && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <TableBuilder
+                    onInsert={(table) => {
+                      const tableText = `\n\n[TABLE:${JSON.stringify(table)}]\n\n`;
+                      setFormData({ ...formData, description: formData.description + tableText });
+                      setTables([...tables, table]);
+                      setShowTableBuilder(false);
+                    }}
+                    onCancel={() => setShowTableBuilder(false)}
+                  />
+                </div>
+              )}
+
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -716,6 +1061,20 @@
                 style={{ width: '100%', resize: 'vertical' }}
                 placeholder="Enter document description..."
               />
+              
+              {tables.length > 0 && (
+                <div style={{ 
+                  marginTop: '0.5rem',
+                  padding: '0.5rem',
+                  background: 'rgba(0, 217, 255, 0.05)',
+                  border: '1px solid rgba(0, 217, 255, 0.2)',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem',
+                  color: 'rgba(255,255,255,0.6)'
+                }}>
+                  📊 {tables.length} table{tables.length > 1 ? 's' : ''} included in this document
+                </div>
+              )}
             </div>
 
             <div>
@@ -1726,10 +2085,77 @@
                     </div>
                     <div style={{ 
                       color: 'white',
-                      lineHeight: '1.6',
-                      whiteSpace: 'pre-wrap'
+                      lineHeight: '1.6'
                     }}>
-                      {viewingDocument.description || 'No description provided.'}
+                      {(() => {
+                        const desc = viewingDocument.description || 'No description provided.';
+                        const parts = desc.split(/(\[TABLE:.*?\])/gs);
+                        
+                        return parts.map((part, index) => {
+                          if (part.startsWith('[TABLE:')) {
+                            try {
+                              const tableData = JSON.parse(part.replace('[TABLE:', '').replace(']', ''));
+                              return (
+                                <div key={index} style={{ margin: '1.5rem 0' }}>
+                                  <div style={{ 
+                                    fontSize: '0.9rem', 
+                                    fontWeight: '500',
+                                    color: '#00d9ff',
+                                    marginBottom: '0.75rem'
+                                  }}>
+                                    📊 {tableData.name}
+                                  </div>
+                                  <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ 
+                                      width: '100%',
+                                      borderCollapse: 'collapse',
+                                      background: '#1a1a1a',
+                                      border: '1px solid rgba(0, 217, 255, 0.3)'
+                                    }}>
+                                      <thead>
+                                        <tr>
+                                          {tableData.columns.map((col, i) => (
+                                            <th key={i} style={{
+                                              padding: '0.75rem',
+                                              background: '#2a2a2a',
+                                              border: '1px solid rgba(0, 217, 255, 0.3)',
+                                              color: '#00d9ff',
+                                              fontSize: '0.85rem',
+                                              fontWeight: '500',
+                                              textAlign: 'left'
+                                            }}>
+                                              {col}
+                                            </th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {tableData.rows.map((row, rowIndex) => (
+                                          <tr key={rowIndex}>
+                                            {row.map((cell, cellIndex) => (
+                                              <td key={cellIndex} style={{
+                                                padding: '0.75rem',
+                                                border: '1px solid rgba(0, 217, 255, 0.2)',
+                                                color: 'white',
+                                                fontSize: '0.85rem'
+                                              }}>
+                                                {cell || '-'}
+                                              </td>
+                                            ))}
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              );
+                            } catch (e) {
+                              return <span key={index}>{part}</span>;
+                            }
+                          }
+                          return <span key={index} style={{ whiteSpace: 'pre-wrap' }}>{part}</span>;
+                        });
+                      })()}
                     </div>
                   </div>
 
