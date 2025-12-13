@@ -936,15 +936,52 @@
       // Parse existing tables from description if editing
       React.useEffect(() => {
         if (document?.description) {
-          const tableMatches = document.description.match(/\[TABLE:.*?\]/gs);
-          if (tableMatches) {
-            const parsedTables = tableMatches.map(match => {
-              try {
-                return JSON.parse(match.replace('[TABLE:', '').replace(']', ''));
-              } catch {
-                return null;
+          const desc = document.description;
+          const parsedTables = [];
+          let searchIndex = 0;
+          
+          // Find all [TABLE: blocks using brace counting
+          while (searchIndex < desc.length) {
+            const tableStart = desc.indexOf('[TABLE:', searchIndex);
+            if (tableStart === -1) break;
+            
+            // Find matching bracket - count braces to handle nested JSON
+            let braceCount = 0;
+            let tableEnd = tableStart + 7; // Start after '[TABLE:'
+            let foundStart = false;
+            
+            while (tableEnd < desc.length) {
+              const char = desc[tableEnd];
+              if (char === '{') {
+                braceCount++;
+                foundStart = true;
+              } else if (char === '}') {
+                braceCount--;
+                if (foundStart && braceCount === 0) {
+                  // Found closing brace, now look for ]
+                  if (desc[tableEnd + 1] === ']') {
+                    tableEnd += 2;
+                    break;
+                  }
+                }
               }
-            }).filter(Boolean);
+              tableEnd++;
+            }
+            
+            // Extract and parse table
+            const tableStr = desc.substring(tableStart, tableEnd);
+            try {
+              const jsonStr = tableStr.substring(7, tableStr.length - 1);
+              const tableData = JSON.parse(jsonStr);
+              parsedTables.push(tableData);
+            } catch (e) {
+              console.error('Error parsing table:', e, tableStr);
+            }
+            
+            searchIndex = tableEnd;
+          }
+          
+          if (parsedTables.length > 0) {
             setTables(parsedTables);
           }
         }
