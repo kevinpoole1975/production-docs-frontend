@@ -2089,76 +2089,199 @@
                     }}>
                       {(() => {
                         const desc = viewingDocument.description || 'No description provided.';
-                        const parts = desc.split(/(\[TABLE:.*?\])/gs);
+                        const elements = [];
+                        let lastIndex = 0;
+                        let searchIndex = 0;
                         
-                        return parts.map((part, index) => {
-                          if (part.startsWith('[TABLE:')) {
-                            try {
-                              const jsonStr = part.substring(7, part.length - 1); // Remove [TABLE: and ]
-                              const tableData = JSON.parse(jsonStr);
+                        // Find all [TABLE: blocks
+                        while (searchIndex < desc.length) {
+                          const tableStart = desc.indexOf('[TABLE:', searchIndex);
+                          if (tableStart === -1) {
+                            // No more tables, add remaining text
+                            if (lastIndex < desc.length) {
+                              const text = desc.substring(lastIndex);
+                              if (text.trim()) {
+                                elements.push(<span key={elements.length} style={{ whiteSpace: 'pre-wrap' }}>{text}</span>);
+                              }
+                            }
+                            break;
+                          }
+                          
+                          // Add text before table
+                          if (tableStart > lastIndex) {
+                            const text = desc.substring(lastIndex, tableStart);
+                            if (text.trim()) {
+                              elements.push(<span key={elements.length} style={{ whiteSpace: 'pre-wrap' }}>{text}</span>);
+                            }
+                          }
+                          
+                          // Find matching bracket - count braces to handle nested JSON
+                          let braceCount = 0;
+                          let tableEnd = tableStart + 7; // Start after '[TABLE:'
+                          let foundStart = false;
+                          
+                          while (tableEnd < desc.length) {
+                            const char = desc[tableEnd];
+                            if (char === '{') {
+                              braceCount++;
+                              foundStart = true;
+                            } else if (char === '}') {
+                              braceCount--;
+                              if (foundStart && braceCount === 0) {
+                                // Found closing brace, now look for ]
+                                if (desc[tableEnd + 1] === ']') {
+                                  tableEnd += 2;
+                                  break;
+                                }
+                              }
+                            }
+                            tableEnd++;
+                          }
+                          
+                          // Extract and parse table
+                          const tableStr = desc.substring(tableStart, tableEnd);
+                          try {
+                            const jsonStr = tableStr.substring(7, tableStr.length - 1);
+                            const tableData = JSON.parse(jsonStr);
+                            
+                            // Create sortable table component
+                            const SortableTable = ({ data }) => {
+                              const [sortConfig, setSortConfig] = React.useState({ column: null, direction: 'asc' });
+                              
+                              const sortedRows = React.useMemo(() => {
+                                if (!sortConfig.column && sortConfig.column !== 0) return data.rows;
+                                
+                                const sorted = [...data.rows].sort((a, b) => {
+                                  const aVal = a[sortConfig.column] || '';
+                                  const bVal = b[sortConfig.column] || '';
+                                  
+                                  // Try numeric comparison first
+                                  const aNum = parseFloat(aVal);
+                                  const bNum = parseFloat(bVal);
+                                  
+                                  if (!isNaN(aNum) && !isNaN(bNum)) {
+                                    return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
+                                  }
+                                  
+                                  // Fall back to string comparison
+                                  const comparison = aVal.toString().localeCompare(bVal.toString());
+                                  return sortConfig.direction === 'asc' ? comparison : -comparison;
+                                });
+                                
+                                return sorted;
+                              }, [data.rows, sortConfig]);
+                              
+                              const handleSort = (columnIndex) => {
+                                setSortConfig(prev => ({
+                                  column: columnIndex,
+                                  direction: prev.column === columnIndex && prev.direction === 'asc' ? 'desc' : 'asc'
+                                }));
+                              };
+                              
                               return (
-                                <div key={index} style={{ margin: '1.5rem 0' }}>
-                                  {tableData.name && (
-                                    <div style={{ 
-                                      fontSize: '0.9rem', 
-                                      fontWeight: '500',
-                                      color: '#00d9ff',
-                                      marginBottom: '0.75rem'
-                                    }}>
-                                      📊 {tableData.name}
-                                    </div>
-                                  )}
-                                  <div style={{ overflowX: 'auto' }}>
-                                    <table style={{ 
-                                      width: '100%',
-                                      borderCollapse: 'collapse',
-                                      background: '#1a1a1a',
-                                      border: '1px solid rgba(0, 217, 255, 0.3)'
-                                    }}>
-                                      <thead>
-                                        <tr>
-                                          {tableData.columns && tableData.columns.map((col, i) => (
-                                            <th key={i} style={{
+                                <div style={{ overflowX: 'auto' }}>
+                                  <table style={{ 
+                                    width: '100%',
+                                    borderCollapse: 'collapse',
+                                    background: '#1a1a1a',
+                                    border: '2px solid rgba(0, 217, 255, 0.4)'
+                                  }}>
+                                    <thead>
+                                      <tr>
+                                        {data.columns && data.columns.map((col, i) => (
+                                          <th 
+                                            key={i} 
+                                            onClick={() => handleSort(i)}
+                                            style={{
                                               padding: '0.75rem',
-                                              background: '#2a2a2a',
-                                              border: '1px solid rgba(0, 217, 255, 0.3)',
+                                              background: sortConfig.column === i ? '#2a3a3a' : '#2a2a2a',
+                                              borderRight: i < data.columns.length - 1 ? '1px solid rgba(0, 217, 255, 0.2)' : 'none',
+                                              borderBottom: '2px solid rgba(0, 217, 255, 0.4)',
                                               color: '#00d9ff',
                                               fontSize: '0.85rem',
                                               fontWeight: '500',
-                                              textAlign: 'left'
-                                            }}>
+                                              textAlign: 'left',
+                                              cursor: 'pointer',
+                                              userSelect: 'none',
+                                              transition: 'background 0.2s'
+                                            }}
+                                            title="Click to sort"
+                                          >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                               {col}
-                                            </th>
+                                              {sortConfig.column === i && (
+                                                <span style={{ fontSize: '0.7rem' }}>
+                                                  {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </th>
+                                        ))}
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {sortedRows && sortedRows.map((row, rowIndex) => (
+                                        <tr 
+                                          key={rowIndex}
+                                          style={{
+                                            background: rowIndex % 2 === 0 ? '#1a1a1a' : '#151515'
+                                          }}
+                                        >
+                                          {row.map((cell, cellIndex) => (
+                                            <td key={cellIndex} style={{
+                                              padding: '0.75rem',
+                                              borderRight: cellIndex < row.length - 1 ? '1px solid rgba(0, 217, 255, 0.15)' : 'none',
+                                              borderBottom: '1px solid rgba(0, 217, 255, 0.1)',
+                                              color: 'white',
+                                              fontSize: '0.85rem'
+                                            }}>
+                                              {cell || '-'}
+                                            </td>
                                           ))}
                                         </tr>
-                                      </thead>
-                                      <tbody>
-                                        {tableData.rows && tableData.rows.map((row, rowIndex) => (
-                                          <tr key={rowIndex}>
-                                            {row.map((cell, cellIndex) => (
-                                              <td key={cellIndex} style={{
-                                                padding: '0.75rem',
-                                                border: '1px solid rgba(0, 217, 255, 0.2)',
-                                                color: 'white',
-                                                fontSize: '0.85rem'
-                                              }}>
-                                                {cell || '-'}
-                                              </td>
-                                            ))}
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
+                                      ))}
+                                    </tbody>
+                                  </table>
                                 </div>
                               );
-                            } catch (e) {
-                              console.error('Error parsing table:', e, part);
-                              return <div key={index} style={{ color: '#ff0055', fontSize: '0.85rem', padding: '0.5rem', background: 'rgba(255,0,85,0.1)', borderRadius: '0.25rem', margin: '0.5rem 0' }}>Error rendering table</div>;
-                            }
+                            };
+                            
+                            elements.push(
+                              <div key={elements.length} style={{ margin: '1.5rem 0' }}>
+                                {tableData.name && (
+                                  <div style={{ 
+                                    fontSize: '0.9rem', 
+                                    fontWeight: '500',
+                                    color: '#00d9ff',
+                                    marginBottom: '0.75rem'
+                                  }}>
+                                    📊 {tableData.name}
+                                  </div>
+                                )}
+                                <SortableTable data={tableData} />
+                              </div>
+                            );
+                          } catch (e) {
+                            console.error('Error parsing table:', e, tableStr);
+                            elements.push(
+                              <div key={elements.length} style={{ 
+                                color: '#ff0055', 
+                                fontSize: '0.85rem', 
+                                padding: '0.5rem', 
+                                background: 'rgba(255,0,85,0.1)', 
+                                borderRadius: '0.25rem', 
+                                margin: '0.5rem 0' 
+                              }}>
+                                Error rendering table
+                              </div>
+                            );
                           }
-                          return part ? <span key={index} style={{ whiteSpace: 'pre-wrap' }}>{part}</span> : null;
-                        });
+                          
+                          lastIndex = tableEnd;
+                          searchIndex = tableEnd;
+                        }
+                        
+                        return elements;
                       })()}
                     </div>
                   </div>
