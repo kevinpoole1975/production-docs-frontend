@@ -2629,13 +2629,13 @@
                             elements.push(
                               <div key={elements.length} style={{ margin: '1.5rem 0' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                                  {tableData.name && (
+                                  {data.name && (
                                     <div style={{ 
                                       fontSize: '0.9rem', 
                                       fontWeight: '500',
                                       color: '#3FB2D2'
                                     }}>
-                                      📊 {tableData.name}
+                                      📊 {data.name}
                                     </div>
                                   )}
                                   <button
@@ -2713,8 +2713,6 @@
                       } catch (e) {
                         console.error(`Error parsing ${markerType}:`, e);
                         console.error('Failed content string:', contentStr);
-                        console.error('Marker type:', markerType);
-                        console.error('JSON string:', jsonStr);
                         elements.push(
                           <div key={elements.length} style={{ 
                             color: '#ff0055', 
