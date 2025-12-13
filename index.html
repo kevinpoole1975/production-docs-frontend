@@ -1065,14 +1065,79 @@
               {tables.length > 0 && (
                 <div style={{ 
                   marginTop: '0.5rem',
-                  padding: '0.5rem',
+                  padding: '1rem',
                   background: 'rgba(0, 217, 255, 0.05)',
                   border: '1px solid rgba(0, 217, 255, 0.2)',
-                  borderRadius: '0.25rem',
-                  fontSize: '0.75rem',
-                  color: 'rgba(255,255,255,0.6)'
+                  borderRadius: '0.375rem'
                 }}>
-                  📊 {tables.length} table{tables.length > 1 ? 's' : ''} included in this document
+                  <div style={{ 
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    color: '#00d9ff',
+                    marginBottom: '0.75rem'
+                  }}>
+                    TABLES IN THIS DOCUMENT ({tables.length})
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {tables.map((table, tableIndex) => (
+                      <div 
+                        key={tableIndex}
+                        style={{
+                          padding: '0.75rem',
+                          background: '#1a1a1a',
+                          border: '1px solid rgba(0, 217, 255, 0.3)',
+                          borderRadius: '0.25rem',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <div>
+                          <div style={{ color: 'white', fontSize: '0.85rem', fontWeight: '500' }}>
+                            📊 {table.name || 'Untitled Table'}
+                          </div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                            {table.columns?.length || 0} columns × {table.rows?.length || 0} rows
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // Remove this table from description
+                              const tableStr = `[TABLE:${JSON.stringify(table)}]`;
+                              const newDesc = formData.description.replace(tableStr, '');
+                              setFormData({ ...formData, description: newDesc });
+                              setTables(tables.filter((_, i) => i !== tableIndex));
+                            }}
+                            style={{
+                              padding: '0.4rem 0.75rem',
+                              background: 'rgba(255, 0, 85, 0.1)',
+                              border: '1px solid #ff0055',
+                              borderRadius: '0.25rem',
+                              color: '#ff0055',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                              fontWeight: '500'
+                            }}
+                          >
+                            DELETE
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{
+                    marginTop: '0.75rem',
+                    padding: '0.5rem',
+                    background: 'rgba(255, 234, 0, 0.05)',
+                    border: '1px solid rgba(255, 234, 0, 0.2)',
+                    borderRadius: '0.25rem',
+                    fontSize: '0.75rem',
+                    color: 'rgba(255, 234, 0, 0.8)'
+                  }}>
+                    💡 Tip: To edit a table, delete it and create a new one with the updated data.
+                  </div>
                 </div>
               )}
             </div>
@@ -2248,16 +2313,37 @@
                             
                             elements.push(
                               <div key={elements.length} style={{ margin: '1.5rem 0' }}>
-                                {tableData.name && (
-                                  <div style={{ 
-                                    fontSize: '0.9rem', 
-                                    fontWeight: '500',
-                                    color: '#00d9ff',
-                                    marginBottom: '0.75rem'
-                                  }}>
-                                    📊 {tableData.name}
-                                  </div>
-                                )}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                  {tableData.name && (
+                                    <div style={{ 
+                                      fontSize: '0.9rem', 
+                                      fontWeight: '500',
+                                      color: '#00d9ff'
+                                    }}>
+                                      📊 {tableData.name}
+                                    </div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      // Switch to edit mode with this table pre-loaded
+                                      setEditingDocument(viewingDocument);
+                                      setViewingDocument(null);
+                                    }}
+                                    style={{
+                                      padding: '0.4rem 0.75rem',
+                                      background: 'rgba(0, 217, 255, 0.1)',
+                                      border: '1px solid #00d9ff',
+                                      borderRadius: '0.25rem',
+                                      color: '#00d9ff',
+                                      fontSize: '0.75rem',
+                                      cursor: 'pointer',
+                                      fontWeight: '500'
+                                    }}
+                                  >
+                                    ✏️ EDIT
+                                  </button>
+                                </div>
                                 <SortableTable data={tableData} />
                               </div>
                             );
