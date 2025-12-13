@@ -1339,7 +1339,8 @@
                     onCancel={() => setShowDiagramEditor(false)}
                   />
                 </div>
-              </div>
+              )}
+
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
