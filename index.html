@@ -1059,8 +1059,20 @@
                 required
                 rows="8"
                 style={{ width: '100%', resize: 'vertical' }}
-                placeholder="Enter document description..."
+                placeholder="Enter document description (tables will be shown separately below)..."
               />
+              
+              <div style={{
+                marginTop: '0.5rem',
+                padding: '0.5rem',
+                background: 'rgba(0, 217, 255, 0.05)',
+                border: '1px solid rgba(0, 217, 255, 0.15)',
+                borderRadius: '0.25rem',
+                fontSize: '0.75rem',
+                color: 'rgba(255,255,255,0.5)'
+              }}>
+                💡 Tables are managed separately below. The [TABLE:...] markers in your description will be replaced with formatted tables when viewing.
+              </div>
               
               {tables.length > 0 && (
                 <div style={{ 
@@ -1086,25 +1098,27 @@
                           padding: '0.75rem',
                           background: '#1a1a1a',
                           border: '1px solid rgba(0, 217, 255, 0.3)',
-                          borderRadius: '0.25rem',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
+                          borderRadius: '0.25rem'
                         }}
                       >
-                        <div>
-                          <div style={{ color: 'white', fontSize: '0.85rem', fontWeight: '500' }}>
-                            📊 {table.name || 'Untitled Table'}
+                        <div style={{ 
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: '0.75rem'
+                        }}>
+                          <div>
+                            <div style={{ color: 'white', fontSize: '0.85rem', fontWeight: '500' }}>
+                              📊 {table.name || 'Untitled Table'}
+                            </div>
+                            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                              {table.columns?.length || 0} columns × {table.rows?.length || 0} rows
+                            </div>
                           </div>
-                          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                            {table.columns?.length || 0} columns × {table.rows?.length || 0} rows
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button
                             type="button"
                             onClick={() => {
-                              // Remove this table from description
+                              if (!confirm(`Delete table "${table.name || 'Untitled'}"?`)) return;
                               const tableStr = `[TABLE:${JSON.stringify(table)}]`;
                               const newDesc = formData.description.replace(tableStr, '');
                               setFormData({ ...formData, description: newDesc });
@@ -1123,6 +1137,73 @@
                           >
                             DELETE
                           </button>
+                        </div>
+                        
+                        {/* Table Preview */}
+                        <div style={{ 
+                          overflowX: 'auto',
+                          fontSize: '0.75rem',
+                          background: '#0a0a0a',
+                          padding: '0.5rem',
+                          borderRadius: '0.25rem',
+                          border: '1px solid rgba(0, 217, 255, 0.2)'
+                        }}>
+                          <table style={{ 
+                            width: '100%',
+                            borderCollapse: 'collapse'
+                          }}>
+                            <thead>
+                              <tr>
+                                {table.columns?.map((col, i) => (
+                                  <th key={i} style={{
+                                    padding: '0.4rem',
+                                    background: '#1a1a1a',
+                                    borderRight: i < table.columns.length - 1 ? '1px solid rgba(0, 217, 255, 0.15)' : 'none',
+                                    color: '#00d9ff',
+                                    fontSize: '0.7rem',
+                                    fontWeight: '500',
+                                    textAlign: 'left'
+                                  }}>
+                                    {col}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {table.rows?.slice(0, 3).map((row, rowIndex) => (
+                                <tr key={rowIndex}>
+                                  {row.map((cell, cellIndex) => (
+                                    <td key={cellIndex} style={{
+                                      padding: '0.4rem',
+                                      borderRight: cellIndex < row.length - 1 ? '1px solid rgba(0, 217, 255, 0.1)' : 'none',
+                                      borderTop: '1px solid rgba(0, 217, 255, 0.1)',
+                                      color: 'rgba(255,255,255,0.7)',
+                                      fontSize: '0.7rem'
+                                    }}>
+                                      {cell || '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                              {table.rows?.length > 3 && (
+                                <tr>
+                                  <td 
+                                    colSpan={table.columns?.length}
+                                    style={{
+                                      padding: '0.4rem',
+                                      textAlign: 'center',
+                                      color: 'rgba(255,255,255,0.4)',
+                                      fontSize: '0.7rem',
+                                      fontStyle: 'italic',
+                                      borderTop: '1px solid rgba(0, 217, 255, 0.1)'
+                                    }}
+                                  >
+                                    +{table.rows.length - 3} more rows...
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
                     ))}
